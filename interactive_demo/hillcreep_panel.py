@@ -117,7 +117,12 @@ E = pn.widgets.FloatSlider(
     name="River incision rate  \u03b5\u0307  [mm/yr]   (negative = aggrading)",
     start=E_MIN, end=E_MAX, step=0.01, value=E0, format="0.00")
 
-notice = pn.pane.Markdown("", sizing_mode="stretch_width")
+#: The diffusivity written out as a function of the two decay parameters, with
+#: the current numbers substituted, plus how much hillslope is still exposed.
+#: The product is the whole lesson, so it is shown being formed rather than
+#: only as a result.
+readout = pn.pane.Markdown("", sizing_mode="stretch_width",
+                           styles={"font-size": "1.05em"})
 
 
 def _sync():
@@ -141,7 +146,8 @@ def _elevation_range(hill):
     """
     steady_crest = (abs(hill.incision_rate) * hill.length ** 2
                     / (8.0 * hill.k_hs))
-    return 1.18 * max(steady_crest, np.max(hill.z) - hill.left.bed, 1.0)
+    return 1.18 * max(steady_crest,
+                      float(np.max(hill.surface())) - hill.left.bed, 1.0)
 
 
 def _colour_scale(hill):
@@ -160,17 +166,8 @@ def _colour_scale(hill):
 def step():
     """Advance one frame, reading the sliders as live forcing."""
     hill = _sync()
-    try:
-        for _ in range(STEPS_PER_FRAME):
-            hill.advance(DT)
-    except NotImplementedError:
-        run.value = False
-        notice.object = (
-            "**Paused.** The aggrading rivers have risen to the foot of the "
-            "hillslope. Burying the toe moves the hillslope's own boundary, "
-            "which this model does not do yet — set *E* back above zero, or "
-            "press **Flatten**.")
-        return
+    for _ in range(STEPS_PER_FRAME):
+        hill.advance(DT)
     _redraw()
 
 
@@ -178,8 +175,14 @@ def _redraw():
     hill = _sync()
     base = 0.5 * (hill.left.bed + hill.right.bed)
 
-    profile.data = {"x": hill.x, "z": hill.z - base}
-    steady.data = {"x": hill.x, "z": hill.steady_profile() - base}
+    profile.data = {"x": hill.x, "z": hill.surface() - base}
+    # A hillslope whose base level is rising has no steady form to chase, so
+    # the dashed curve is withdrawn rather than drawn as a meaningless
+    # downward parabola.
+    if hill.incision_rate > 0.0:
+        steady.data = {"x": hill.x, "z": hill.steady_profile() - base}
+    else:
+        steady.data = {"x": [], "z": []}
 
     scale = _colour_scale(hill)
     velocity.data = {"u": [hill.velocity_field(zeta) * 1e3]}
@@ -187,22 +190,59 @@ def _redraw():
 
     top = _elevation_range(hill)
     fig_z.y_range.start, fig_z.y_range.end = -0.06 * top, top
+    valley.data = {"x": [0.0, hill.length], "y1": [-0.06 * top] * 2,
+                   "y2": [0.0, 0.0]}
 
     fig_z.title.text = ("t = %.0f kyr        k_hs = k_u \u0394z_u = %.4g m\u00b2/yr"
                         % (hill.t / 1000.0, hill.k_hs))
+    # Across the exposed span *inclusive of its bounding nodes*: the toe is a
+    # boundary node and is never in the active mask, so a max over active
+    # nodes alone reports the velocity one node inside the toe (4.90 rather
+    # than 5.00 mm/yr at the shipped defaults).
+    span = hill.exposed_span()
+    u_toe = 0.0 if span is None else float(
+        np.abs(hill.surface_velocity()[span[0]:span[1] + 1]).max())
     fig_u.title.text = ("surface creep velocity at the toe = %.2f mm/yr"
-                        % (abs(hill.surface_velocity()[-1]) * 1e3))
+                        % (u_toe * 1e3))
+
+    exposed = hill.exposed_length
+    buried = "" if exposed >= hill.length else (
+        "  \u00b7  **buried by aggradation:** %.0f m of hillslope, "
+        "leaving **%.0f m** exposed" % (hill.length - exposed, exposed))
+    steady_note = "" if hill.incision_rate > 0.0 else (
+        "  \u00b7  *no steady form while base level is not falling*")
+    readout.object = (
+        "**k_hs = k_u \u00d7 \u0394z_u = %.3f \u00d7 %.2f "
+        "= %.4f m\u00b2/yr**%s%s"
+        % (hill.k_u, hill.dz_u, hill.k_hs, buried, steady_note))
+
+
+def do_equilibrate():
+    """Impose the steady form instead of waiting out a 1e5-year relaxation."""
+    hill = _sync()
+    if hill.incision_rate <= 0.0:
+        readout.object = (
+            "**No equilibrium to jump to.** A hillslope whose rivers are "
+            "static or aggrading has no steady form \u2014 raise "
+            "**\u03b5\u0307** above zero first.")
+        return
+    hill.equilibrate()
+    _redraw()
 
 
 def do_reset():
     sim["hill"] = Hillslope(length=LENGTH, n_nodes=N_NODES, k_u=k_u.value,
                             dz_u=dz_u.value, incision_rate=E.value * 1e-3)
-    notice.object = ""
     _redraw()
 
 
 hill0 = sim["hill"]
-profile = ColumnDataSource(data={"x": hill0.x, "z": hill0.z})
+profile = ColumnDataSource(data={"x": hill0.x, "z": hill0.surface()})
+# The valley fill: everything below the rivers, which is where the alluvium is.
+# Drawn under the profile, so a buried toe reads as a hillslope running into
+# sediment rather than as a hillslope that has mysteriously gone flat.
+valley = ColumnDataSource(data={"x": [0.0, LENGTH], "y1": [-1.0, -1.0],
+                                "y2": [0.0, 0.0]})
 steady = ColumnDataSource(data={"x": hill0.x, "z": hill0.steady_profile()})
 velocity = ColumnDataSource(data={"u": [hill0.velocity_field(zeta) * 1e3]})
 
@@ -213,6 +253,8 @@ mapper = LinearColorMapper(palette=_smooth_palette(RdBu11), low=-1.0, high=1.0)
 fig_z = figure(height=320, width=880, title="",
                y_axis_label="Elevation above\nthe rivers [m]",
                toolbar_location=None)
+fig_z.varea(x="x", y1="y1", y2="y2", source=valley,
+            fill_color="#e0d3b8", fill_alpha=0.85, level="underlay")
 fig_z.line("x", "z", source=steady, line_width=1, line_dash="dashed",
            color="gray", legend_label="steady form")
 fig_z.line("x", "z", source=profile, line_width=3, color="black",
@@ -254,9 +296,11 @@ pn.Column(
         "panel: **k_u** and **\u0394z_u** can be traded against each other to "
         "give the same **k_hs** and the same hillslope \u2014 but not the same "
         "motion underneath it."),
-    pn.Row(run, reset_button(do_reset, name="Flatten")),
+    pn.Row(run, reset_button(do_reset, name="Flatten"),
+           pn.widgets.Button(name="Jump to equilibrium", button_type="default",
+                             on_click=lambda *a: do_equilibrate())),
     pn.Row(k_u, dz_u, sizing_mode="stretch_width", max_width=DESIGN_WIDTH),
     pn.Row(E, pn.Spacer(), sizing_mode="stretch_width", max_width=DESIGN_WIDTH),
-    notice, fig_z, fig_u,
+    readout, fig_z, fig_u,
     sizing_mode="stretch_width", max_width=DESIGN_WIDTH,
 ).servable(title="Hillslope creep and diffusion")

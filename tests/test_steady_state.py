@@ -1,6 +1,7 @@
 """One test per claim about the steady form the profile chases."""
 
 import numpy as np
+import pytest
 
 from hillcreep import Hillslope
 
@@ -73,3 +74,27 @@ def test_a_hill_with_no_incision_decays_at_the_analytic_rate():
     # from exp(-L*t) by ~3e-4.
     assert np.allclose(h.z, 10.0 * decay * shape, rtol=1e-2, atol=1e-6)
     assert h.z.max() < 0.2 * 10.0
+
+
+def test_equilibrate_reproduces_the_steady_form_and_refuses_when_there_is_none():
+    """The button's model side: impose the parabola, and refuse when there is none.
+
+    Refusing matters more than imposing. With a non-positive rate,
+    steady_profile returns a downward parabola that the flooding then flattens
+    completely -- a silent wrong answer that looks like a legitimate result.
+    """
+    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h.equilibrate()
+    assert np.allclose(h.z, h.steady_profile(), rtol=0.0, atol=1e-12)
+    assert np.isclose(h.z.max() - h.left.bed, 6.25)
+
+    # And it is a genuine fixed point: one step only lowers it.
+    before = h.z.copy()
+    dt = h.stable_timestep()
+    h.advance(dt)
+    assert np.allclose(h.z, before - h.incision_rate * dt, rtol=0.0, atol=1e-12)
+
+    for rate in (0.0, -0.05e-3):
+        bad = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=rate)
+        with pytest.raises(ValueError, match="no steady form"):
+            bad.equilibrate()

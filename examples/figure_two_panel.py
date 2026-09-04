@@ -34,26 +34,46 @@ def main():
                    help="river incision rate [mm/yr]")
     p.add_argument("--length", type=float, default=100.0, help="hillslope width [m]")
     p.add_argument("--kyr", type=float, default=300.0, help="run duration [kyr]")
+    p.add_argument("--equilibrate-first", action="store_true",
+                   help="start from the steady form instead of from flat, "
+                        "which is what makes an aggrading run legible")
     p.add_argument("--out", default="hillcreep_two_panel.png")
     a = p.parse_args()
 
     h = Hillslope(length=a.length, k_u=a.k_u, dz_u=a.dz_u,
                   incision_rate=a.edot * 1e-3)
+    if a.equilibrate_first:
+        # Equilibrate at the magnitude of the rate, then apply its sign. A
+        # negative rate has no steady form at all, so equilibrating at the
+        # value itself would build a downward parabola and flood it flat.
+        h.incision_rate = abs(h.incision_rate)
+        h.equilibrate()
+        h.incision_rate = a.edot * 1e-3
     h.run(a.kyr * 1e3)
 
     z_display = ZETA_EFOLDINGS * h.dz_u
     zeta = np.linspace(0.0, z_display, N_ZETA)
     u = h.velocity_field(zeta) * 1e3                 # mm/yr
-    u_max = np.max(np.abs(u))
+    # A fully buried (or fully relaxed) hillslope has no motion anywhere, and
+    # TwoSlopeNorm rejects vmin == vcenter == vmax.  Fall back to a nominal
+    # scale so the panel renders as uniformly zero rather than raising.
+    u_max = float(np.max(np.abs(u))) or 1e-6
 
     fig, (ax_z, ax_u) = plt.subplots(
         2, 1, figsize=(8.0, 6.4), sharex=True,
         gridspec_kw={"height_ratios": [1.45, 1.0], "hspace": 0.12})
 
     base = h.left.bed
-    ax_z.plot(h.x, h.steady_profile() - base, "--", color="0.55", lw=1.2,
-              label="steady form")
-    ax_z.plot(h.x, h.z - base, "k-", lw=2.5, label="hillslope")
+    if h.incision_rate > 0.0:
+        ax_z.plot(h.x, h.steady_profile() - base, "--", color="0.55", lw=1.2,
+                  label="steady form")
+    ax_z.plot(h.x, h.surface() - base, "k-", lw=2.5, label="hillslope")
+    ax_z.axhspan(ax_z.get_ylim()[0], 0.0, color="#e0d3b8", zorder=0)
+    if h.exposed_length < h.length:
+        ax_z.text(0.5 * h.length, -0.02 * (h.z.max() - base),
+                  "valley fill: %.0f m of hillslope buried, %.0f m exposed"
+                  % (h.length - h.exposed_length, h.exposed_length),
+                  ha="center", va="top", fontsize=8, color="#6b5a3e")
     ax_z.axhline(0.0, color="#2b6cb0", lw=1.2)
     ax_z.plot([h.x[0], h.x[-1]], [0.0, 0.0], "v", color="#2b6cb0", ms=9,
               clip_on=False, label="rivers")
@@ -85,8 +105,12 @@ def main():
               "no bedrock: the panel bottom is a viewing\n"
               "depth, not the base of the soil",
               ha="center", va="center", fontsize=8, color="0.35")
-    ax_u.annotate("surface: $u_s$ = %.2f mm/yr"
-                  % (abs(h.surface_velocity()[-1]) * 1e3),
+    # Across the exposed span inclusive of its bounding nodes: node -1 is the
+    # river, and once aggradation has buried the toe it reports 0.00 mm/yr.
+    _span = h.exposed_span()
+    _u_toe = 0.0 if _span is None else float(
+        np.abs(h.surface_velocity()[_span[0]:_span[1] + 1]).max())
+    ax_u.annotate("fastest surface creep: $u_s$ = %.2f mm/yr" % (_u_toe * 1e3),
                   xy=(h.x[-1], 0.0), xytext=(-10, 16), textcoords="offset points",
                   ha="right", va="bottom", fontsize=9, color="#7f1d1d")
 
@@ -97,7 +121,7 @@ def main():
     print("wrote %s" % a.out)
     print("  k_hs = %.5g m2/yr, relief = %.3f m (steady %.3f m),"
           " u_s(toe) = %.3f mm/yr"
-          % (h.k_hs, h.z.max() - base, h.steady_profile().max() - base,
+          % (h.k_hs, h.surface().max() - base, h.steady_profile().max() - base,
              abs(h.surface_velocity()[-1]) * 1e3))
 
 

@@ -53,7 +53,7 @@ def test_buried_nodes_sit_at_the_fill_elevation_and_do_not_evolve():
 
     buried = ~h.active
     assert buried.sum() > 2                             # more than the two ends
-    assert np.allclose(h.z[buried], 2.0)
+    assert np.allclose(h.surface()[buried], 2.0)        # alluvium at the fill
 
     # Written first as "the buried set grows", which failed: it shrank from 18
     # nodes to 2. That is the model being right. With the fill held, the
@@ -62,15 +62,19 @@ def test_buried_nodes_sit_at_the_fill_elevation_and_do_not_evolve():
     # two below.
     h.incision_rate = 0.0
     h.run(2.0e4)
-    assert np.allclose(h.z[~h.active], 2.0)          # buried nodes sit on the fill
-    assert not (h.z[h.active] < 2.0).any()           # nothing exposed below it
+    assert np.allclose(h.surface()[~h.active], 2.0)  # alluvium over buried nodes
+    assert not (h.surface()[h.active] < 2.0).any()   # nothing exposed below it
 
 
-def test_a_buried_toe_re_emerges_as_a_fill_terrace_when_base_level_falls():
+def test_a_buried_toe_is_exhumed_unchanged_when_base_level_falls():
     """Re-emergence is free because the mask is rebuilt every call.
 
-    The node comes back at the *fill* elevation, not its original one -- the
-    sediment was really deposited, and is left as a terrace that then decays.
+    The hillslope under the sediment is *remembered*, not overwritten, so
+    lowering base level exhumes the topography that was buried rather than
+    inventing a terrace. An earlier version did overwrite it, and that quietly
+    defeated the whole mechanism: with z pinned to a rising bed, diffusion
+    lifted the toe along with it and no node ever drowned at any rate the
+    sliders offer.
     """
     h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
     original_toe = h.z[1]
@@ -78,12 +82,13 @@ def test_a_buried_toe_re_emerges_as_a_fill_terrace_when_base_level_falls():
     h.left.bed = h.right.bed = 3.0
     h.apply_boundaries()
     assert not h.active[1]
+    assert np.isclose(h.surface()[1], 3.0)           # alluvium over it
+    assert np.isclose(h.z[1], original_toe)          # hillslope remembered
 
     h.left.bed = h.right.bed = 0.0
     h.apply_boundaries()
     assert h.active[1]
-    assert np.isclose(h.z[1], 3.0)
-    assert not np.isclose(h.z[1], original_toe)
+    assert np.isclose(h.z[1], original_toe)          # exhumed unchanged
 
 
 def test_a_fully_buried_hillslope_is_flat_and_has_no_exposed_span():
@@ -93,7 +98,9 @@ def test_a_fully_buried_hillslope_is_flat_and_has_no_exposed_span():
 
     assert h.exposed_span() is None
     assert h.exposed_length == 0.0
-    assert np.allclose(h.z, h.z[0])
+    # The *surface* is flat -- alluvium from side to side. The hillslope
+    # beneath it is untouched, which is what lets it be exhumed later.
+    assert np.allclose(h.surface(), h.left.bed)
 
 
 def test_aggradation_runs_without_raising():

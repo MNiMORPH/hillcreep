@@ -142,8 +142,8 @@ class Hillslope(object):
     # -- the transport law ------------------------------------------------
 
     def face_slope(self):
-        """Slope ``dz/dx`` on the faces between nodes [-]. Length ``n - 1``."""
-        return np.diff(self.z) / self.dx
+        """Slope of the visible surface on the faces between nodes [-]."""
+        return np.diff(self.surface()) / self.dx
 
     def surface_velocity(self):
         """Downslope surface creep velocity ``u_s = -k_u dz/dx`` at nodes [m/yr].
@@ -158,7 +158,7 @@ class Hillslope(object):
         draws the eye.  Caught by
         ``test_steady_surface_velocity_does_not_depend_on_K``.
         """
-        return -self.k_u * np.gradient(self.z, self.dx, edge_order=2)
+        return -self.k_u * np.gradient(self.surface(), self.dx, edge_order=2)
 
     def velocity_field(self, zeta):
         """``u(x, zeta) = u_s(x) exp(-zeta / dz_u)`` [m/yr].
@@ -185,7 +185,7 @@ class Hillslope(object):
         it is the only form that survives ``D`` becoming a function of ``x``
         once soil thickness varies.  See design/05.
         """
-        return -self.k_hs * self.face_slope()
+        return -self.k_hs * np.diff(self.surface()) / self.dx
 
     # -- time stepping -----------------------------------------------------
 
@@ -198,44 +198,64 @@ class Hillslope(object):
         """
         return safety * self.dx ** 2 / self.k_hs
 
+    def fill_level(self):
+        """Elevation of the alluvial surface at each node [m].
+
+        One flat level per river -- the level set.  Each river floods its own
+        half; with both sharing a rate, as they do, the two halves agree.
+        """
+        f = np.empty(self.x.size)
+        mid = self.x.size // 2
+        f[:mid] = self.left.bed
+        f[mid:] = self.right.bed
+        return f
+
+    def surface(self):
+        """The visible ground surface [m]: hillslope, or alluvium over it.
+
+        ``max(z, fill)``.  This is what a person standing there would walk on,
+        and it is what the transport law sees.  ``self.z`` underneath it is the
+        hillslope's own surface, which is *remembered* while buried rather than
+        overwritten -- so that lowering base level again exhumes the hillslope
+        instead of inventing a terrace.
+        """
+        return np.maximum(self.z, self.fill_level())
+
     def apply_boundaries(self):
-        """Write the river beds into the elevation array, flooding the toes.
+        """Set the river beds and recompute which nodes the sediment has buried.
 
         The single place that couples rivers to the hillslope, and the whole of
         the aggradation treatment.  The alluvial surface is a **level set**: one
-        flat elevation per river.  Flooding it means finding every node the
-        sediment has drowned, setting it to that elevation, and dropping it from
-        ``self.active`` -- after which the hillslope's boundary is the
-        shallowest still-active node and the hillslope is genuinely *shorter*.
+        flat elevation per river.  A node is buried when the hillslope surface
+        beneath it lies below that level, and a buried node is dropped from
+        ``self.active`` and stops evolving.  The hillslope's boundary is then
+        the shallowest still-exposed node, and the hillslope is genuinely
+        *shorter*.
 
         That shortening is the point.  Burying a toe shortens the distance over
         which the divide has to shed its material, so it changes the whole
-        profile; it is a coupling, not a cosmetic fill at the bottom of the
-        figure.
+        profile; it is a coupling, not a fill drawn at the bottom of the figure.
 
-        The mask is rebuilt from scratch every call, which is what makes
-        **re-emergence** free: when base level falls, a node that is no longer
-        under the alluvial surface becomes active again.  It comes back at the
-        *fill* elevation rather than its original one, so the deposit is left
-        behind as a terrace that then decays diffusively.  That is what
-        depositing sediment and then removing base level does.
+        Nothing is overwritten.  An earlier version raised the buried nodes to
+        the fill, which quietly defeated the whole mechanism: with ``z[0]``
+        pinned to a rising bed, diffusion lifted the toe with it and no node
+        ever drowned, so at every rate the sliders offer the hillslope was
+        levitated rather than buried.  Keeping ``z`` and the fill separate is
+        what makes burial actually happen.
+
+        The mask is rebuilt from scratch every call, so **re-emergence is
+        free**: when base level falls, a node no longer under the alluvial
+        surface becomes active again, carrying the topography it had when it
+        was buried.
         """
-        self.active[:] = True
-        self.active[0] = self.active[-1] = False
         self.z[0] = self.left.bed
         self.z[-1] = self.right.bed
-
-        n = self.z.size
-        i = 1
-        while i < n - 1 and self.z[i] < self.left.bed:
-            self.z[i] = self.left.bed
-            self.active[i] = False
-            i += 1
-        j = n - 2
-        while j > 0 and self.z[j] < self.right.bed:
-            self.z[j] = self.right.bed
-            self.active[j] = False
-            j -= 1
+        # ``>=``, not ``>``: a node sitting exactly at the alluvial surface is
+        # at the contact and still part of the hillslope. With ``>`` a flat
+        # initial hill -- which starts level with its rivers -- has no active
+        # nodes at all and can never grow.
+        self.active = self.z >= self.fill_level()
+        self.active[0] = self.active[-1] = False
 
     def exposed_span(self):
         """Indices of the two nodes bounding the still-exposed hillslope.
@@ -319,9 +339,19 @@ class Hillslope(object):
 
         The shape the profile is chasing, imposed rather than waited for.  A
         relaxation takes of order ``L**2 / (pi**2 k_hs)`` -- about 1e5 years at
-        the usual settings, which is minutes of animation.  Meaningless while a
-        river aggrades, since no steady form exists then.
+        the usual settings, which is minutes of animation.
+
+        Raises for a non-positive incision rate rather than returning
+        something.  There is no steady form when base level is static or
+        rising, and ``steady_profile`` would hand back a *downward* parabola
+        that the flooding then flattens completely -- a silent, plausible-
+        looking wrong answer, which is the worst kind.
         """
+        if self.incision_rate <= 0.0:
+            raise ValueError(
+                "no steady form exists for incision_rate = %g: base level is "
+                "static or rising, so nothing balances. Equilibrate at a "
+                "positive rate first, then change it." % self.incision_rate)
         self.z = self.steady_profile()
         self.apply_boundaries()
 
