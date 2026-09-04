@@ -1,8 +1,8 @@
 """hillcreep -- hillslope diffusivity built from a creep velocity profile.
 
 ``D`` is not a parameter here.  A student sets how fast soil creeps at the
-surface per unit slope (``K``) and how quickly that motion decays with depth
-(``H_star``), and the diffusivity ``D = K * H_star`` is reported back as a
+surface per unit slope (``k_u``) and how quickly that motion decays with depth
+(``dz_u``), and the diffusivity ``k_hs = k_u * dz_u`` is reported back as a
 consequence.
 """
 

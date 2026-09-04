@@ -1,8 +1,8 @@
 """hillcreep as a browser demo: a hillslope, and the motion underneath it.
 
-The diffusivity is not a slider.  A student sets how fast soil creeps at the
-surface per unit slope (K) and how quickly that motion dies away with depth
-(H*), and D = K H* is reported back.  The lower panel draws the velocity
+The k_hs is not a slider.  A student sets how fast soil creeps at the
+surface per unit slope (k_u) and how quickly that motion dies away with depth
+(H*), and D = k_u H* is reported back.  The lower panel draws the velocity
 profile that D is a summary of.
 
 Build and view it with::
@@ -31,11 +31,11 @@ LENGTH = 100.0                  # hillslope width [m]
 N_NODES = 101
 
 # Slider bounds.  The upper end of each is set by steepness, not by taste:
-# probe_a shows that E = 0.2 mm/yr at the default K and H* gives a steady toe
+# probe_a shows that E = 0.2 mm/yr at the default k_u and H* gives a steady toe
 # slope of 1.0 (45 degrees), well outside where a linear creep law is
 # defensible.  See design/03.
-K_MIN, K_MAX, K0 = 0.01, 0.05, 0.02          # [m/yr] at unit slope
-HS_MIN, HS_MAX, HS0 = 0.25, 2.0, 0.5         # [m]
+KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02          # [m/yr] at unit slope
+DZU_MIN, DZU_MAX, DZU0 = 0.25, 2.0, 0.5         # [m]
 E_MIN, E_MAX, E0 = -0.05, 0.10, 0.05         # [mm/yr], positive = incising
 
 #: How deep the velocity panel reaches, as a multiple of the *largest* H* the
@@ -49,18 +49,18 @@ E_MIN, E_MAX, E0 = -0.05, 0.10, 0.05         # [mm/yr], positive = incising
 #: while the default H* = 0.5 m keeps its motion in the top quarter.  At 1.5
 #: the deepest setting shows 77.7% and the default is squeezed into the top
 #: sixth.  One constant, and it is a proposal either way.  See design/04.
-Z_DISPLAY_IN_HSTAR_MAX = 1.0
+Z_DISPLAY_IN_DZU_MAX = 1.0
 
 #: Depth shown in the velocity panel [m].  A viewing choice, not the base of
 #: the soil -- there is no bedrock in this model.
-Z_DISPLAY = Z_DISPLAY_IN_HSTAR_MAX * HS_MAX
+Z_DISPLAY = Z_DISPLAY_IN_DZU_MAX * DZU_MAX
 N_ZETA = 121
 
 # Explicit diffusion is stable for dt <= dx**2 / 2D.  The sliders change D
 # while it runs, so the step is sized from the largest D on offer, not the
-# current one: a quarter of the limit at D = K_MAX * HS_MAX = 0.1 m2/yr.
+# current one: a quarter of the limit at D = KU_MAX * DZU_MAX = 0.1 m2/yr.
 DX = LENGTH / (N_NODES - 1)
-DT = 0.25 * DX ** 2 / (K_MAX * HS_MAX)       # 2.5 yr
+DT = 0.25 * DX ** 2 / (KU_MAX * DZU_MAX)       # 2.5 yr
 
 # probe_c, measured: 400 steps per frame reaches 95% of the steady crest in
 # 307 frames (10.2 s at 30 fps) at the defaults, 1228 frames (40.9 s) at the
@@ -93,17 +93,17 @@ def _smooth_palette(anchors, n=256):
     return out
 
 # `sim`, never `state`: panel exports pn.state, and shadowing it fails silently.
-sim = {"hill": Hillslope(length=LENGTH, n_nodes=N_NODES, K=K0, H_star=HS0,
+sim = {"hill": Hillslope(length=LENGTH, n_nodes=N_NODES, k_u=KU0, dz_u=DZU0,
                          incision_rate=E0 * 1e-3)}
 
-K = pn.widgets.FloatSlider(
-    name="Surface creep velocity at unit slope  K  [m/yr]",
-    start=K_MIN, end=K_MAX, step=0.005, value=K0, format="0.000")
-H_star = pn.widgets.FloatSlider(
-    name="Creep e-folding depth  H*  [m]",
-    start=HS_MIN, end=HS_MAX, step=0.05, value=HS0, format="0.00")
+k_u = pn.widgets.FloatSlider(
+    name="Surface creep velocity at unit slope  k_u  [m/yr]",
+    start=KU_MIN, end=KU_MAX, step=0.005, value=KU0, format="0.000")
+dz_u = pn.widgets.FloatSlider(
+    name="Creep e-folding depth  \u0394z_u  [m]",
+    start=DZU_MIN, end=DZU_MAX, step=0.05, value=DZU0, format="0.00")
 E = pn.widgets.FloatSlider(
-    name="River incision rate  E  [mm/yr]   (negative = aggrading)",
+    name="River incision rate  \u03b5\u0307  [mm/yr]   (negative = aggrading)",
     start=E_MIN, end=E_MAX, step=0.01, value=E0, format="0.00")
 
 notice = pn.pane.Markdown("", sizing_mode="stretch_width")
@@ -112,8 +112,8 @@ notice = pn.pane.Markdown("", sizing_mode="stretch_width")
 def _sync():
     """Push the sliders into the model.  Read live, so they act while running."""
     hill = sim["hill"]
-    hill.K = K.value
-    hill.H_star = H_star.value
+    hill.k_u = k_u.value
+    hill.dz_u = dz_u.value
     hill.incision_rate = E.value * 1e-3
     return hill
 
@@ -129,7 +129,7 @@ def _elevation_range(hill):
     sliders, it does not rescale frame to frame while the animation runs.
     """
     steady_crest = (abs(hill.incision_rate) * hill.length ** 2
-                    / (8.0 * hill.diffusivity))
+                    / (8.0 * hill.k_hs))
     return 1.18 * max(steady_crest, np.max(hill.z) - hill.left.bed, 1.0)
 
 
@@ -142,7 +142,7 @@ def _colour_scale(hill):
     is a useful signal in itself.  When E is zero there is no steady velocity
     to scale by, so the present profile is used instead.
     """
-    steady = abs(hill.incision_rate) * hill.length / (2.0 * hill.H_star)
+    steady = abs(hill.incision_rate) * hill.length / (2.0 * hill.dz_u)
     return max(steady, np.max(np.abs(hill.surface_velocity())), 1e-9)
 
 
@@ -177,15 +177,15 @@ def _redraw():
     top = _elevation_range(hill)
     fig_z.y_range.start, fig_z.y_range.end = -0.06 * top, top
 
-    fig_z.title.text = ("t = %.0f kyr        D = K H* = %.4g m²/yr"
-                        % (hill.t / 1000.0, hill.diffusivity))
+    fig_z.title.text = ("t = %.0f kyr        k_hs = k_u \u0394z_u = %.4g m\u00b2/yr"
+                        % (hill.t / 1000.0, hill.k_hs))
     fig_u.title.text = ("surface creep velocity at the toe = %.2f mm/yr"
                         % (abs(hill.surface_velocity()[-1]) * 1e3))
 
 
 def do_reset():
-    sim["hill"] = Hillslope(length=LENGTH, n_nodes=N_NODES, K=K.value,
-                            H_star=H_star.value, incision_rate=E.value * 1e-3)
+    sim["hill"] = Hillslope(length=LENGTH, n_nodes=N_NODES, k_u=k_u.value,
+                            dz_u=dz_u.value, incision_rate=E.value * 1e-3)
     notice.object = ""
     _redraw()
 
@@ -227,7 +227,7 @@ responsive(fig_u)
 
 run = animator(step)
 
-for widget in (K, H_star, E):
+for widget in (k_u, dz_u, E):
     widget.param.watch(lambda event: _redraw(), "value")
 
 _redraw()
@@ -235,14 +235,16 @@ _redraw()
 pn.Column(
     pn.pane.Markdown(
         "### Hillslope diffusivity, taken apart\n"
-        "**D** is the number everyone quotes and nobody measures. Here it is "
-        "not a setting: you choose how fast soil creeps at the surface (**K**) "
-        "and how quickly that motion dies away downward (**H\\***), and "
-        "**D = K H\\*** is reported back.\n\n"
-        "Press **▶** and drag the sliders while it runs. Watch the lower panel: "
-        "**K** and **H\\*** can be traded against each other to give the same "
-        "**D** and the same hillslope — but not the same motion underneath it."),
+        "**k**~hs~ is the number everyone quotes and nobody measures. Here it "
+        "is not a setting: you choose how fast soil creeps at the surface "
+        "(**k**~u~) and how quickly that motion dies away downward "
+        "(**\u0394z**~u~), and **k**~hs~ **= k**~u~ **\u0394z**~u~ is reported "
+        "back.\n\n"
+        "Press **\u25b6** and drag the sliders while it runs. Watch the lower "
+        "panel: **k**~u~ and **\u0394z**~u~ can be traded against each other to "
+        "give the same **k**~hs~ and the same hillslope \u2014 but not the same "
+        "motion underneath it."),
     pn.Row(run, reset_button(do_reset, name="Flatten")),
-    K, H_star, E, notice, fig_z, fig_u,
+    k_u, dz_u, E, notice, fig_z, fig_u,
     sizing_mode="stretch_width", max_width=DESIGN_WIDTH,
 ).servable(title="Hillslope creep and diffusion")

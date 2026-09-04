@@ -29,7 +29,7 @@ def test_aggradation_past_the_toe_raises_rather_than_silently_misbehaving():
 
 def test_a_node_dropped_from_the_active_mask_does_not_evolve():
     """The hook aggradation will use: inactive nodes are held, not solved."""
-    h = Hillslope(K=0.02, H_star=0.5, incision_rate=0.0)
+    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.0)
     h.z = 10.0 * np.sin(np.pi * h.x / h.length)
     h.apply_boundaries()
 
@@ -44,6 +44,6 @@ def test_a_node_dropped_from_the_active_mask_does_not_evolve():
 
 
 def test_the_hill_stays_symmetric_when_both_rivers_share_a_rate():
-    h = Hillslope(K=0.02, H_star=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
     h.run(1.0e5)
     assert np.allclose(h.z, h.z[::-1], rtol=0.0, atol=1e-12)

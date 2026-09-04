@@ -5,7 +5,7 @@ Settles: (1) the display depth of the velocity panel, (2) the time step, and
 
 (1) With no bedrock the mobile layer is semi-infinite, so the velocity panel
     has to be truncated somewhere.  How much of the flux is below the cut?
-(2) Explicit diffusion is stable for dt <= dx**2 / (2 D).  D = K*H_star varies
+(2) Explicit diffusion is stable for dt <= dx**2 / (2 D).  D = k_u*dz_u varies
     with the sliders, so the step must be safe at the largest D on offer.
 (3) The relaxation time is ~1e5 yr.  Drawn one step per frame that is hours of
     animation, so a frame must advance many steps.  How many, measured.
@@ -18,20 +18,20 @@ import numpy as np
 
 L, NX = 100., 101
 DX = L / (NX - 1)
-K_MIN, K_MAX, K0 = 0.01, 0.05, 0.02       # [m/yr]
-HS_MIN, HS_MAX, HS0 = 0.25, 2.0, 0.5      # [m]
+KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02       # [m/yr]
+DZU_MIN, DZU_MAX, DZU0 = 0.25, 2.0, 0.5      # [m]
 E0 = 0.05e-3                              # [m/yr]
 
 print("(1) Flux captured above a truncation depth Z_DISPLAY, as a fraction of")
-print("    the full integral K*H_star*S.  Fraction = 1 - exp(-Z/H_star).")
+print("    the full integral k_u*dz_u*S.  Fraction = 1 - exp(-Z/dz_u).")
 for Z in (1.0, 2.0, 3.0, 5.0):
     print("    Z_DISPLAY=%.1f m:" % Z, "  ".join(
-        "H*=%.2f -> %5.1f%%" % (hs, 100. * (1. - np.exp(-Z / hs)))
-        for hs in (HS_MIN, HS0, 1.0, HS_MAX)))
+        "H*=%.2f -> %5.1f%%" % (dzu, 100. * (1. - np.exp(-Z / dzu)))
+        for dzu in (DZU_MIN, DZU0, 1.0, DZU_MAX)))
 
 print()
-print("(2) Stability.  D_max = K_max * H*_max = %.3f m2/yr" % (K_MAX * HS_MAX))
-D_max = K_MAX * HS_MAX
+print("(2) Stability.  D_max = K_max * H*_max = %.3f m2/yr" % (KU_MAX * DZU_MAX))
+D_max = KU_MAX * DZU_MAX
 dt_stab = DX ** 2 / (2. * D_max)
 DT = 0.25 * DX ** 2 / D_max
 print("    dx = %.2f m, dt_stability = %.2f yr, chosen DT = %.2f yr (quarter of it)"
@@ -44,8 +44,8 @@ print("    frames that implies at STEPS_PER_FRAME, with measured wall time.")
 x = np.linspace(0., L, NX)
 
 
-def run_to_95(K, H_star, E, steps_per_frame, max_frames=2000):
-    D = K * H_star
+def run_to_95(k_u, dz_u, E, steps_per_frame, max_frames=2000):
+    D = k_u * dz_u
     crest_target = 0.95 * E * L ** 2 / (8. * D)
     z = np.zeros(NX)
     z_river = 0.
@@ -66,9 +66,9 @@ def run_to_95(K, H_star, E, steps_per_frame, max_frames=2000):
 
 for spf in (100, 200, 400):
     print("    STEPS_PER_FRAME = %3d:" % spf)
-    for K, hs in ((K0, HS0), (K_MIN, HS_MIN), (K_MAX, HS_MAX)):
-        f, wall, relief = run_to_95(K, hs, E0, spf)
+    for k_u, dzu in ((KU0, DZU0), (KU_MIN, DZU_MIN), (KU_MAX, DZU_MAX)):
+        f, wall, relief = run_to_95(k_u, dzu, E0, spf)
         hit = "capped" if f >= 2000 else "reached"
-        print("      K=%.2f H*=%.2f (D=%.4f): %5d frames (%s), %5.1f s at 30 fps,"
+        print("      k_u=%.2f H*=%.2f (D=%.4f): %5d frames (%s), %5.1f s at 30 fps,"
               "  compute %6.3f ms/frame,  relief %.2f m"
-              % (K, hs, K * hs, f, hit, f / 30., 1e3 * wall / max(f, 1), relief))
+              % (k_u, dzu, k_u * dzu, f, hit, f / 30., 1e3 * wall / max(f, 1), relief))

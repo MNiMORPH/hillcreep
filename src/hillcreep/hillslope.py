@@ -3,23 +3,39 @@
 The model in one place.  Soil creeps downslope at a rate that decays
 exponentially below the land-air interface,
 
-    u(x, zeta) = u_s(x) * exp(-zeta / H_star),      u_s(x) = -K * dz/dx
+    u(x, zeta) = u_s(x) * exp(-zeta / dz_u),      u_s(x) = -k_u * dz/dx
 
 with ``zeta`` the depth below the surface, positive downward.  Integrating that
-profile over a semi-infinite mobile layer gives the depth-integrated flux, and
-with it the diffusivity:
+profile over a semi-infinite mobile layer gives the depth-integrated flux of
+mobile material, and with it the hillslope diffusivity:
 
-    q(x) = integral_0^inf u dzeta = -K * H_star * dz/dx
-    D    = K * H_star
+    q_m(x) = integral_0^inf u dzeta = -k_u * dz_u * dz/dx
+    k_hs   = k_u * dz_u
 
-``D`` is therefore *computed and reported*, never set.  That is the whole point
-of this model; see ``design/02-teaching-scope.md``.
+``k_hs`` is therefore *computed and reported*, never set.  That is the whole
+point of this model; see ``design/02-teaching-scope.md``.
 
-The law is Johnstone & Hilley (2015), Geology 43(1) 83-86, in the
-``H >> H_star`` (no bedrock) limit; the exponential velocity profile it
-integrates is measured by Deshpande, Furbish, Arratia & Jerolmack (2021),
-Nature Communications 12:3909.  See ``design/01-transport-law.md`` for the
-notation and for the three places it departs from those papers.
+Notation follows Andy's Geomorphology course notes rather than any one paper,
+because the literature has no single convention for this law -- three papers
+give three notations -- and because the obvious literature symbols are already
+taken elsewhere in the course: ``D`` is grain size and ``K`` is turbulent
+diffusivity.  ``k_u`` is the one symbol not already in the notes; it is the
+[L/T] coefficient that the notes' ``k_hs`` currently doubles for.  The
+crosswalk to the literature is in ``README.md`` and the reasoning is in
+``design/01-transport-law.md``.
+
+    k_hs   hillslope diffusivity          [m^2/yr]   computed, never set
+    k_u    surface creep velocity at unit slope [m/yr]
+    dz_u   creep e-folding depth, the notes' Delta z_u    [m]
+    q_m    depth-integrated flux of mobile material  [m^2/yr]
+    u_s    surface creep velocity, k_u * S           [m/yr]
+    zeta   depth below the land-air interface, = -(z' - z) in the notes
+
+The law is Johnstone & Hilley (2015), Geology 43(1) 83-86, in the no-bedrock
+limit; the exponential velocity profile it integrates is measured by Deshpande,
+Furbish, Arratia & Jerolmack (2021), Nature Communications 12:3909; and it is
+derived independently in the course notes themselves (see
+``docs/course-notes-provenance.md``).
 
 Units are metres and years throughout.  Elevation ``z`` is positive up; depth
 below the surface ``zeta`` is positive down.
@@ -62,27 +78,29 @@ class Hillslope(object):
         Distance between the two channels [m].
     n_nodes : int
         Number of nodes across that distance.
-    K : float
-        Soil transport velocity coefficient [m/yr]: the surface creep velocity
-        at unit slope.  *Not* the surface velocity itself, which varies along
-        the hill as ``u_s = K * S``.
-    H_star : float
-        Creep e-folding depth [m]: the depth over which downslope velocity
-        falls by a factor of e.
+    k_u : float
+        Surface creep velocity at unit slope [m/yr].  *Not* the surface
+        velocity itself, which varies along the hill as ``u_s = k_u * S``.
+        This is the coefficient the course notes' ``k_hs`` doubles for in
+        their depth-dependent flux equation; it needs its own name because it
+        differs from a diffusivity by one power of length.
+    dz_u : float
+        Creep e-folding depth [m], the notes' ``Delta z_u``: the depth over
+        which downslope velocity falls by a factor of e.
     incision_rate : float
         Bed lowering rate applied to both rivers [m/yr], positive for incision.
     z : array_like, optional
         Initial surface elevation [m].  Defaults to flat at the river bed.
     """
 
-    def __init__(self, length=100.0, n_nodes=101, K=0.02, H_star=0.5,
+    def __init__(self, length=100.0, n_nodes=101, k_u=0.02, dz_u=0.5,
                  incision_rate=0.05e-3, z=None):
         self.length = float(length)
         self.x = np.linspace(0.0, self.length, int(n_nodes))
         self.dx = self.x[1] - self.x[0]
 
-        self.K = float(K)
-        self.H_star = float(H_star)
+        self.k_u = float(k_u)
+        self.dz_u = float(dz_u)
 
         self.left = River(bed=0.0, incision_rate=incision_rate)
         self.right = River(bed=0.0, incision_rate=incision_rate)
@@ -102,14 +120,15 @@ class Hillslope(object):
     # -- what the two sliders add up to ----------------------------------
 
     @property
-    def diffusivity(self):
-        """Hillslope diffusivity ``D = K * H_star`` [m**2/yr].
+    def k_hs(self):
+        """Hillslope diffusivity ``k_hs = k_u * dz_u`` [m**2/yr].
 
         Reported, never set.  Landlab's ``DepthDependentDiffuser`` states the
-        same identity: "the commonly used 'hillslope diffusivity' coefficient
-        is equal to the product of K and H*".
+        same identity, in its own notation (quoted verbatim, so its symbols are
+        left alone): "the commonly used 'hillslope diffusivity' coefficient is
+        equal to the product of K and H*".
         """
-        return self.K * self.H_star
+        return self.k_u * self.dz_u
 
     @property
     def incision_rate(self):
@@ -127,7 +146,7 @@ class Hillslope(object):
         return np.diff(self.z) / self.dx
 
     def surface_velocity(self):
-        """Downslope surface creep velocity ``u_s = -K dz/dx`` at nodes [m/yr].
+        """Downslope surface creep velocity ``u_s = -k_u dz/dx`` at nodes [m/yr].
 
         Signed: positive is motion in the +x direction.  Zero at the divide,
         largest in magnitude at the toes.  Node-aligned with ``x``.
@@ -139,10 +158,10 @@ class Hillslope(object):
         draws the eye.  Caught by
         ``test_steady_surface_velocity_does_not_depend_on_K``.
         """
-        return -self.K * np.gradient(self.z, self.dx, edge_order=2)
+        return -self.k_u * np.gradient(self.z, self.dx, edge_order=2)
 
     def velocity_field(self, zeta):
-        """``u(x, zeta) = u_s(x) exp(-zeta / H_star)`` [m/yr].
+        """``u(x, zeta) = u_s(x) exp(-zeta / dz_u)`` [m/yr].
 
         Parameters
         ----------
@@ -156,17 +175,17 @@ class Hillslope(object):
             product -- cheap enough to recompute every animation frame.
         """
         zeta = np.atleast_1d(np.asarray(zeta, dtype=float))
-        return np.exp(-zeta / self.H_star)[:, None] * self.surface_velocity()[None, :]
+        return np.exp(-zeta / self.dz_u)[:, None] * self.surface_velocity()[None, :]
 
-    def flux(self):
-        """Depth-integrated soil flux ``q = -K H_star dz/dx`` on faces [m**2/yr].
+    def q_m(self):
+        """Depth-integrated soil q_m ``q = -k_u dz_u dz/dx`` on faces [m**2/yr].
 
-        Face form, not a node-centred second difference.  With ``K`` and
-        ``H_star`` uniform the two are identical, so this costs nothing now;
+        Face form, not a node-centred second difference.  With ``k_u`` and
+        ``dz_u`` uniform the two are identical, so this costs nothing now;
         it is the only form that survives ``D`` becoming a function of ``x``
         once soil thickness varies.  See design/05.
         """
-        return -self.diffusivity * self.face_slope()
+        return -self.k_hs * self.face_slope()
 
     # -- time stepping -----------------------------------------------------
 
@@ -177,7 +196,7 @@ class Hillslope(object):
         that.  A demo whose sliders change ``D`` while it runs must size the
         step from the largest ``D`` on offer, not the current one.
         """
-        return safety * self.dx ** 2 / self.diffusivity
+        return safety * self.dx ** 2 / self.k_hs
 
     def apply_boundaries(self):
         """Write the river beds into the elevation array.
@@ -202,7 +221,7 @@ class Hillslope(object):
         self.left.advance(dt)
         self.right.advance(dt)
         # Conservation of mass: dz/dt = -dq/dx, with q on faces.
-        dzdt = -np.diff(self.flux()) / self.dx
+        dzdt = -np.diff(self.q_m()) / self.dx
         self.z[1:-1] += dt * np.where(self.active[1:-1], dzdt, 0.0)
         self.apply_boundaries()
         self.t += dt
@@ -223,16 +242,16 @@ class Hillslope(object):
         rivers share a rate, which is why they do (design 03).
         """
         base = 0.5 * (self.left.bed + self.right.bed)
-        return base + (self.incision_rate / (2.0 * self.diffusivity)
+        return base + (self.incision_rate / (2.0 * self.k_hs)
                        * self.x * (self.length - self.x))
 
     def steady_surface_velocity(self):
-        """Steady surface velocity ``u_s = E x' / H_star`` at nodes [m/yr].
+        """Steady surface velocity ``u_s = E x' / dz_u`` at nodes [m/yr].
 
         ``x'`` is distance from the divide, signed so that the result carries
-        the direction of motion.  Note what is absent: ``K``.  Mass balance
+        the direction of motion.  Note what is absent: ``k_u``.  Mass balance
         fixes the flux each point must carry, and the e-folding depth alone
         decides how fast the surface must move to carry it.  Verified against
         the parabola route in ``prototypes/probe_b_steady_surface_velocity.py``.
         """
-        return self.incision_rate * (self.x - 0.5 * self.length) / self.H_star
+        return self.incision_rate * (self.x - 0.5 * self.length) / self.dz_u

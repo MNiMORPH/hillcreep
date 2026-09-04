@@ -26,19 +26,22 @@ N_ZETA = 121
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("--K", type=float, default=0.02, help="m/yr at unit slope")
-    p.add_argument("--H-star", type=float, default=0.5, help="e-folding depth [m]")
-    p.add_argument("--E", type=float, default=0.05, help="incision rate [mm/yr]")
+    p.add_argument("--k-u", type=float, default=0.02,
+                   help="surface creep velocity at unit slope [m/yr]")
+    p.add_argument("--dz-u", type=float, default=0.5,
+                   help="creep e-folding depth, the notes' Delta z_u [m]")
+    p.add_argument("--edot", type=float, default=0.05,
+                   help="river incision rate [mm/yr]")
     p.add_argument("--length", type=float, default=100.0, help="hillslope width [m]")
     p.add_argument("--kyr", type=float, default=300.0, help="run duration [kyr]")
     p.add_argument("--out", default="hillcreep_two_panel.png")
     a = p.parse_args()
 
-    h = Hillslope(length=a.length, K=a.K, H_star=a.H_star,
-                  incision_rate=a.E * 1e-3)
+    h = Hillslope(length=a.length, k_u=a.k_u, dz_u=a.dz_u,
+                  incision_rate=a.edot * 1e-3)
     h.run(a.kyr * 1e3)
 
-    z_display = ZETA_EFOLDINGS * h.H_star
+    z_display = ZETA_EFOLDINGS * h.dz_u
     zeta = np.linspace(0.0, z_display, N_ZETA)
     u = h.velocity_field(zeta) * 1e3                 # mm/yr
     u_max = np.max(np.abs(u))
@@ -57,9 +60,11 @@ def main():
     ax_z.set_ylabel("Elevation above\nthe rivers [m]")
     ax_z.legend(loc="upper right", frameon=False, fontsize=9)
     ax_z.set_title(
-        "$D = K H_* = %.4g$ m$^2$/yr   is a consequence, not a setting"
-        "        ($K$ = %.3g m/yr,  $H_*$ = %.2g m,  $E$ = %.3g mm/yr)"
-        % (h.diffusivity, h.K, h.H_star, h.incision_rate * 1e3),
+        r"$k_\mathrm{hs} = k_u \Delta z_u = %.4g$ m$^2$/yr"
+        "   is a consequence, not a setting\n"
+        r"($k_u$ = %.3g m/yr,   $\Delta z_u$ = %.2g m,"
+        r"   $\dot{\varepsilon}$ = %.3g mm/yr)"
+        % (h.k_hs, h.k_u, h.dz_u, h.incision_rate * 1e3),
         fontsize=10, pad=10)
 
     mesh = ax_u.pcolormesh(
@@ -90,8 +95,9 @@ def main():
 
     fig.savefig(a.out, dpi=150, bbox_inches="tight")
     print("wrote %s" % a.out)
-    print("  D = %.5g m2/yr, relief = %.3f m (steady %.3f m), u_s(toe) = %.3f mm/yr"
-          % (h.diffusivity, h.z.max() - base, h.steady_profile().max() - base,
+    print("  k_hs = %.5g m2/yr, relief = %.3f m (steady %.3f m),"
+          " u_s(toe) = %.3f mm/yr"
+          % (h.k_hs, h.z.max() - base, h.steady_profile().max() - base,
              abs(h.surface_velocity()[-1]) * 1e3))
 
 

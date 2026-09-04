@@ -11,7 +11,7 @@ def test_the_steady_parabola_is_a_fixed_point_in_the_falling_frame():
     dz/dt = D d2z/dx2 = -E for the parabola, so the whole surface translates
     downward with the rivers and its shape does not change.
     """
-    h = Hillslope(K=0.02, H_star=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
     h.z = h.steady_profile()
     before = h.z.copy()
 
@@ -22,7 +22,7 @@ def test_the_steady_parabola_is_a_fixed_point_in_the_falling_frame():
 
 
 def test_the_profile_relaxes_toward_the_steady_parabola():
-    h = Hillslope(K=0.02, H_star=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
     misfit = [np.max(np.abs(h.z - h.steady_profile()))]
     for _ in range(4):
         h.run(1.0e5)
@@ -35,12 +35,12 @@ def test_the_profile_relaxes_toward_the_steady_parabola():
 def test_steady_surface_velocity_does_not_depend_on_K():
     """The demo's second lesson, as a test.
 
-    Mass balance gives u_s = E x' / H_star with no K in it.  The independent
-    route -- u_s = -K dz/dx on the steady parabola -- must agree, for every K.
+    Mass balance gives u_s = E x' / dz_u with no k_u in it.  The independent
+    route -- u_s = -k_u dz/dx on the steady parabola -- must agree, for every k_u.
     Both are exact for a quadratic, so this is a machine-precision comparison.
     """
-    for K in (0.005, 0.02, 0.08):
-        h = Hillslope(K=K, H_star=0.5, incision_rate=0.05e-3)
+    for k_u in (0.005, 0.02, 0.08):
+        h = Hillslope(k_u=k_u, dz_u=0.5, incision_rate=0.05e-3)
         h.z = h.steady_profile()
 
         from_profile = h.surface_velocity()
@@ -59,7 +59,7 @@ def test_a_hill_with_no_incision_decays_at_the_analytic_rate():
     threshold was invented, so the threshold was replaced by the analytic
     prediction -- a far stronger test than the one it replaces.
     """
-    h = Hillslope(K=0.02, H_star=0.5, incision_rate=0.0)
+    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.0)
     shape = np.sin(np.pi * h.x / h.length)
     h.z = 10.0 * shape
     h.apply_boundaries()
@@ -67,7 +67,7 @@ def test_a_hill_with_no_incision_decays_at_the_analytic_rate():
     t_end = 2.0e5
     h.run(t_end)
 
-    decay = np.exp(-h.diffusivity * np.pi ** 2 * t_end / h.length ** 2)
+    decay = np.exp(-h.k_hs * np.pi ** 2 * t_end / h.length ** 2)
     # 1% covers the two discretisations: the discrete Laplacian's eigenvalue
     # differs from pi**2/L**2 by ~1e-4 relative, and forward Euler's (1-dt*L)**n
     # from exp(-L*t) by ~3e-4.
