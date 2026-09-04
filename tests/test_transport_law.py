@@ -43,15 +43,14 @@ def test_face_form_flux_matches_the_constant_diffusivity_stencil():
     # apply_boundaries() is not called -- the boundaries are not under test,
     # and a random z[1] below the river bed correctly trips the aggradation
     # guard (see test_boundaries.py).
-    # Offset above the alluvial surface: the transport law acts on
-    # max(z, fill), so a profile dipping below the river level would be clipped
-    # by the fill and would not be testing the flux operator at all.
+    # Offset above the river level: apply_boundaries deposits alluvium up to
+    # it, so a profile dipping below would be filled in and would not be
+    # testing the flux operator at all.
     h.z = 10.0 + np.random.default_rng(0).normal(size=h.x.size)
 
     face_form = -np.diff(h.q_m()) / h.dx
-    surf = h.surface()
     stencil = (h.k_hs
-               * (surf[:-2] - 2.0 * surf[1:-1] + surf[2:]) / h.dx ** 2)
+               * (h.z[:-2] - 2.0 * h.z[1:-1] + h.z[2:]) / h.dx ** 2)
 
     assert np.allclose(face_form, stencil, rtol=0.0, atol=1e-12)
 

@@ -67,16 +67,37 @@ test in reverse), and whether the deposited sediment is tracked as a volume or
 merely as a level (the level alone is enough to move the boundary, and is what
 the quote describes).
 
-One thing the design did not anticipate, found by running it: **re-emergence is
-free.** Because the mask is rebuilt from scratch on every call, a node that is
-no longer under the alluvial surface simply becomes active again. No bookkeeping
-was needed for it at all.
+### Three versions, two of them wrong
 
-The second question -- volume or level -- is answered by the quote: the level
-alone is enough to move the boundary, and no sediment volume is tracked. The
-consequence, which is physically right and worth stating, is that mass is not
-conserved within the hillslope. It should not be: the river is *delivering*
-sediment from outside.
+Worth recording, because each failed for a different reason and the second one
+looked right.
+
+1. **Set drowned nodes to the level, keep a separate mask.** Inert. Pinning
+   `z[0]` to a rising bed let diffusion lift the toe along with it, so at every
+   rate the sliders offer no node ever drowned: exposed length stayed 100 m of
+   100 m at 5, 10, 25 and 40 kyr of aggradation.
+2. **Track the level only, remember the hillslope underneath.** Buried
+   correctly -- exposed length 100 to 92 to 48 m -- but on re-incision the fill
+   *vanished* and the original hillslope was exhumed intact. Andy caught it:
+   aggradation should leave **fill terraces, which then diffuse on their own**.
+   Tracking a level cannot do that, because nothing was ever deposited.
+3. **Deposit permanently.** `z` is raised to the alluvial level and never
+   lowered. While the river holds that level the node is inactive, so the fill
+   stays flat and the hillslope shortens; when base level falls the node stands
+   *above* the new level, becomes active, and is a fill terrace that degrades
+   like any other topography.
+
+Version 3 is also the simplest: one `np.maximum`, and no second array.
+
+So the volume-or-level question resolves differently than design 03 first
+recorded. The *level* drives deposition, but what is deposited is kept, so the
+surface carries a memory of the fill. Mass is still not conserved within the
+hillslope, and should not be: the river delivers material from outside it.
+
+Only `z > fill` is active. A node exactly at the alluvial surface is valley
+floor, graded by the river, and does not creep -- which also means a flat
+hillslope starting level with its rivers does nothing until they cut down.
+That is correct: it has no relief to drive anything.
 
 ### One ordering trap, paid for
 

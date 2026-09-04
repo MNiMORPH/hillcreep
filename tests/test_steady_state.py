@@ -13,7 +13,11 @@ def test_the_steady_parabola_is_a_fixed_point_in_the_falling_frame():
     downward with the rivers and its shape does not change.
     """
     h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
-    h.z = h.steady_profile()
+    # equilibrate(), not a bare assignment to z: apply_boundaries has to run
+    # so the active mask matches the profile. Assigning z directly leaves the
+    # mask from construction -- all-inactive, since a flat hill sits exactly at
+    # its rivers -- and nothing moves at all.
+    h.equilibrate()
     before = h.z.copy()
 
     dt = h.stable_timestep()

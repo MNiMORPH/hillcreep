@@ -34,9 +34,17 @@ def main():
                    help="river incision rate [mm/yr]")
     p.add_argument("--length", type=float, default=100.0, help="hillslope width [m]")
     p.add_argument("--kyr", type=float, default=300.0, help="run duration [kyr]")
+    p.add_argument("--then-edot", type=float, default=None,
+                   help="switch to this incision rate [mm/yr] for a second "
+                        "phase -- aggrade, then re-incise, to leave a terrace")
+    p.add_argument("--then-kyr", type=float, default=0.0,
+                   help="duration of that second phase [kyr]")
     p.add_argument("--equilibrate-first", action="store_true",
                    help="start from the steady form instead of from flat, "
                         "which is what makes an aggrading run legible")
+    p.add_argument("--ymax", type=float, default=None,
+                   help="cap the elevation axis [m]; useful when the steady "
+                        "curve is far above the profile and would flatten it")
     p.add_argument("--out", default="hillcreep_two_panel.png")
     a = p.parse_args()
 
@@ -50,6 +58,9 @@ def main():
         h.equilibrate()
         h.incision_rate = a.edot * 1e-3
     h.run(a.kyr * 1e3)
+    if a.then_edot is not None:
+        h.incision_rate = a.then_edot * 1e-3
+        h.run(a.then_kyr * 1e3)
 
     z_display = ZETA_EFOLDINGS * h.dz_u
     zeta = np.linspace(0.0, z_display, N_ZETA)
@@ -67,7 +78,7 @@ def main():
     if h.incision_rate > 0.0:
         ax_z.plot(h.x, h.steady_profile() - base, "--", color="0.55", lw=1.2,
                   label="steady form")
-    ax_z.plot(h.x, h.surface() - base, "k-", lw=2.5, label="hillslope")
+    ax_z.plot(h.x, h.z - base, "k-", lw=2.5, label="hillslope")
     ax_z.axhspan(ax_z.get_ylim()[0], 0.0, color="#e0d3b8", zorder=0)
     if h.exposed_length < h.length:
         ax_z.text(0.5 * h.length, -0.02 * (h.z.max() - base),
@@ -97,6 +108,9 @@ def main():
 
     # Colorbar on the velocity panel only: it describes that panel, and
     # spanning both implies the topography is on the same scale.
+    if a.ymax is not None:
+        ax_z.set_ylim(top=a.ymax)
+
     cb = fig.colorbar(mesh, ax=ax_u, pad=0.02, aspect=16)
     cb.set_label("Downslope creep velocity  $u$  [mm/yr]\n"
                  r"$\leftarrow$ moving left      moving right $\rightarrow$")
@@ -121,7 +135,7 @@ def main():
     print("wrote %s" % a.out)
     print("  k_hs = %.5g m2/yr, relief = %.3f m (steady %.3f m),"
           " u_s(toe) = %.3f mm/yr"
-          % (h.k_hs, h.surface().max() - base, h.steady_profile().max() - base,
+          % (h.k_hs, h.z.max() - base, h.steady_profile().max() - base,
              abs(h.surface_velocity()[-1]) * 1e3))
 
 

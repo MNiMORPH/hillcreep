@@ -142,8 +142,8 @@ class Hillslope(object):
     # -- the transport law ------------------------------------------------
 
     def face_slope(self):
-        """Slope of the visible surface on the faces between nodes [-]."""
-        return np.diff(self.surface()) / self.dx
+        """Slope ``dz/dx`` on the faces between nodes [-]. Length ``n - 1``."""
+        return np.diff(self.z) / self.dx
 
     def surface_velocity(self):
         """Downslope surface creep velocity ``u_s = -k_u dz/dx`` at nodes [m/yr].
@@ -158,7 +158,7 @@ class Hillslope(object):
         draws the eye.  Caught by
         ``test_steady_surface_velocity_does_not_depend_on_K``.
         """
-        return -self.k_u * np.gradient(self.surface(), self.dx, edge_order=2)
+        return -self.k_u * np.gradient(self.z, self.dx, edge_order=2)
 
     def velocity_field(self, zeta):
         """``u(x, zeta) = u_s(x) exp(-zeta / dz_u)`` [m/yr].
@@ -185,7 +185,7 @@ class Hillslope(object):
         it is the only form that survives ``D`` becoming a function of ``x``
         once soil thickness varies.  See design/05.
         """
-        return -self.k_hs * np.diff(self.surface()) / self.dx
+        return -self.k_hs * np.diff(self.z) / self.dx
 
     # -- time stepping -----------------------------------------------------
 
@@ -210,51 +210,36 @@ class Hillslope(object):
         f[mid:] = self.right.bed
         return f
 
-    def surface(self):
-        """The visible ground surface [m]: hillslope, or alluvium over it.
-
-        ``max(z, fill)``.  This is what a person standing there would walk on,
-        and it is what the transport law sees.  ``self.z`` underneath it is the
-        hillslope's own surface, which is *remembered* while buried rather than
-        overwritten -- so that lowering base level again exhumes the hillslope
-        instead of inventing a terrace.
-        """
-        return np.maximum(self.z, self.fill_level())
-
     def apply_boundaries(self):
-        """Set the river beds and recompute which nodes the sediment has buried.
+        """Deposit alluvium up to the river level, and hold what the river holds.
 
         The single place that couples rivers to the hillslope, and the whole of
-        the aggradation treatment.  The alluvial surface is a **level set**: one
-        flat elevation per river.  A node is buried when the hillslope surface
-        beneath it lies below that level, and a buried node is dropped from
-        ``self.active`` and stops evolving.  The hillslope's boundary is then
-        the shallowest still-exposed node, and the hillslope is genuinely
-        *shorter*.
+        the aggradation treatment.  Each river's alluvial surface is a **level
+        set**: one flat elevation.  Where the ground lies below it, sediment is
+        **deposited** -- ``z`` is raised to the level and never lowered -- and
+        that node is held by the river rather than evolving.  The hillslope's
+        boundary is then the lowest node still standing above the fill, and the
+        exposed hillslope is genuinely *shorter*.
 
-        That shortening is the point.  Burying a toe shortens the distance over
-        which the divide has to shed its material, so it changes the whole
-        profile; it is a coupling, not a fill drawn at the bottom of the figure.
+        Deposition is permanent, and that is the point.  When base level falls
+        again, the sediment does not vanish: those nodes come back **above** the
+        new river level, so they become active and start to diffuse.  What they
+        are at that moment is a **fill terrace**, and it degrades like any other
+        topography.  An earlier version tracked only the level and kept the
+        buried hillslope underneath, which exhumed the original topography and
+        could not make a terrace at all.
 
-        Nothing is overwritten.  An earlier version raised the buried nodes to
-        the fill, which quietly defeated the whole mechanism: with ``z[0]``
-        pinned to a rising bed, diffusion lifted the toe with it and no node
-        ever drowned, so at every rate the sliders offer the hillslope was
-        levitated rather than buried.  Keeping ``z`` and the fill separate is
-        what makes burial actually happen.
-
-        The mask is rebuilt from scratch every call, so **re-emergence is
-        free**: when base level falls, a node no longer under the alluvial
-        surface becomes active again, carrying the topography it had when it
-        was buried.
+        Only ``z > fill`` is active: a node sitting exactly at the alluvial
+        surface is valley floor, graded by the river, and does not creep.  A
+        flat hillslope starting level with its rivers is therefore entirely
+        valley floor and does nothing until the rivers cut down -- which is
+        correct, since it has no relief to drive anything.
         """
         self.z[0] = self.left.bed
         self.z[-1] = self.right.bed
-        # ``>=``, not ``>``: a node sitting exactly at the alluvial surface is
-        # at the contact and still part of the hillslope. With ``>`` a flat
-        # initial hill -- which starts level with its rivers -- has no active
-        # nodes at all and can never grow.
-        self.active = self.z >= self.fill_level()
+        fill = self.fill_level()
+        np.maximum(self.z, fill, out=self.z)
+        self.active = self.z > fill
         self.active[0] = self.active[-1] = False
 
     def exposed_span(self):
@@ -307,32 +292,24 @@ class Hillslope(object):
     def steady_profile(self):
         """Elevation of the steady form for the current settings [m].
 
-        Balancing uniform lowering at ``E`` against diffusion gives a parabola
-        between the two exposed toes,
+        Balancing uniform lowering at ``incision_rate`` against transport gives
+        the parabola between the two rivers,
 
-            z - z_toe = E (x - x_l)(x_r - x) / (2 k_hs)
+            z - z_river = E x (L - x) / (2 k_hs)
 
-        measured across the **exposed** span rather than the full grid, so it
-        stays correct while aggradation has buried part of the hillslope.
-        Buried nodes are returned at the fill elevation.
+        Measured river to river, not across the exposed span: the steady form
+        is a property of the hillslope between its two channels, and a flat
+        hillslope level with its rivers has no exposed span at all yet still
+        has a steady form to grow into.
 
-        There is no steady form while a river aggrades -- base level is rising,
-        so nothing balances -- and this returns a downward parabola for a
-        negative rate.  Callers that draw it should hide it when
+        Meaningful only for a positive incision rate.  There is no steady form
+        while base level is static or rising, and this returns a downward
+        parabola for a negative rate; callers that draw it should hide it when
         ``incision_rate <= 0``.
         """
-        span = self.exposed_span()
         base = 0.5 * (self.left.bed + self.right.bed)
-        if span is None:
-            return np.full(self.x.size, base)
-        il, ir = span
-        xl, xr = self.x[il], self.x[ir]
-        toe = 0.5 * (self.z[il] + self.z[ir])
-        z = np.where((self.x >= xl) & (self.x <= xr),
-                     toe + (self.incision_rate / (2.0 * self.k_hs)
-                            * (self.x - xl) * (xr - self.x)),
-                     self.z)
-        return z
+        return base + (self.incision_rate / (2.0 * self.k_hs)
+                       * self.x * (self.length - self.x))
 
     def equilibrate(self):
         """Put the hillslope straight into its steady form.
@@ -358,15 +335,10 @@ class Hillslope(object):
     def steady_surface_velocity(self):
         """Steady surface velocity ``u_s = E x' / dz_u`` at nodes [m/yr].
 
-        ``x'`` is distance from the divide, signed so that the result carries
-        the direction of motion.  Note what is absent: ``k_u``.  Mass balance
-        fixes the flux each point must carry, and the e-folding depth alone
-        decides how fast the surface must move to carry it.  Verified against
-        the parabola route in ``prototypes/probe_b_steady_surface_velocity.py``.
+        ``x'`` is distance from the divide, signed so the result carries the
+        direction of motion.  Note what is absent: ``k_u``.  Mass balance fixes
+        the flux each point must carry, and the e-folding depth alone decides
+        how fast the surface must move to carry it.  Verified against the
+        parabola route in ``prototypes/probe_b_steady_surface_velocity.py``.
         """
-        span = self.exposed_span()
-        if span is None:
-            return np.zeros(self.x.size)
-        il, ir = span
-        mid = 0.5 * (self.x[il] + self.x[ir])
-        return self.incision_rate * (self.x - mid) / self.dz_u
+        return self.incision_rate * (self.x - 0.5 * self.length) / self.dz_u

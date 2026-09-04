@@ -28,21 +28,26 @@ DT = 2.5
 
 
 def flood(z, bed):
-    """The proposed algorithm, standalone: returns (z, active)."""
+    """The algorithm as implemented, standalone: returns (z, active).
+
+    Deposition, not masking: ground below the alluvial level is *raised* to it
+    and never lowered again, which is what leaves a terrace when base level
+    falls. Only ground strictly above the level is active -- a node sitting at
+    the alluvial surface is valley floor, graded by the river, and does not
+    creep.
+
+    (Two earlier versions of this probe are worth remembering. The first walked
+    inward from each end and set drowned nodes to the level while keeping a
+    separate mask; the second kept the buried hillslope underneath and treated
+    the fill as a level only. The first was inert in the full model -- pinning
+    z[0] to a rising bed let diffusion lift the toe so nothing ever drowned --
+    and the second could not produce a terrace at all.)
+    """
     z = z.copy()
-    active = np.ones(z.size, dtype=bool)
-    active[0] = active[-1] = False
     z[0] = z[-1] = bed
-    i = 1
-    while i < z.size - 1 and z[i] < bed:
-        z[i] = bed
-        active[i] = False
-        i += 1
-    j = z.size - 2
-    while j > 0 and z[j] < bed:
-        z[j] = bed
-        active[j] = False
-        j -= 1
+    z = np.maximum(z, bed)
+    active = z > bed
+    active[0] = active[-1] = False
     return z, active
 
 
@@ -81,14 +86,14 @@ for step in range(400000):
 print("    after 1 Myr at that level: crest %.4f m above fill" % (z.max() - 2.0))
 
 print()
-print("(3) Re-emergence: bury to 3 m, then drop the level back to 0.")
+print("(3) Terrace: bury to 3 m, then drop the level back to 1 m.")
 z, active = flood(z0, 3.0)
 buried = int((~active).sum() - 2)
-z_back, active_back = flood(z, 0.0)
-print("    buried %d nodes at bed = 3 m; after dropping to 0 m, %d are active"
+z_back, active_back = flood(z, 1.0)
+print("    buried %d nodes at bed = 3 m; after dropping to 1 m, %d are active"
       % (buried, active_back.sum()))
-print("    the re-exposed toe comes back at the FILL elevation, not the")
-print("    original hillslope:  z[1] = %.3f m (was %.3f m before flooding)"
-      % (z_back[1], z0[1]))
-print("    -> the fill is left as a terrace and then decays diffusively,")
-print("       which is what depositing sediment and removing base level does.")
+print("    node 5 was hillslope at %.3f m, was buried under fill at %.3f m,"
+      % (z0[5], z[5]))
+print("    and now stands %.3f m above the river -- a fill terrace, which is"
+      % (z_back[5] - 1.0))
+print("    then ordinary topography and degrades like any other.")
