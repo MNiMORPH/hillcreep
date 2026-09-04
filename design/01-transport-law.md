@@ -47,6 +47,17 @@ the equation above is Landlab's transcription of it. Landlab's class docstring
 says "Johnstone and Hilley (2014)" while its reference list says 2015 -- the
 2015 *Geology* entry is the one with a DOI and is used here.
 
+## A third, closer source: Andy's own course notes
+
+The same law is derived independently in
+`~/Dropbox/Courses/Geomorphology/02-hillslopes/02_03_Hillslopes_2022.tex`,
+§"Explicit consideration of soils in hillslope transport", from Roger Hooke's
+Bevens Creek creep measurements. The notes use `k_hs`, `Δz_u` and `h_m` where
+Johnstone & Hilley use `K`, `H*` and `H`. See
+`docs/course-notes-provenance.md`, which also records the two corrections this
+model carries over: a lost sign in the substituted flux equation, and `k_hs`
+being used for two quantities that differ by one power of length.
+
 ## The decision: no bedrock, so the layer is semi-infinite
 
 Bedrock, a finite soil thickness `H`, and weathering are all deferred (design
