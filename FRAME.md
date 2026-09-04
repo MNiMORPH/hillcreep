@@ -50,8 +50,8 @@ notes' own `k_hs`. Crosswalk in `README.md`.
    (`design/05`). `ρ_m/ρ_r` goes in with the first line of bedrock, not
    before -- a constant fixed at 1.0 that participates in nothing would read as
    though the model accounts for a density contrast it has never seen.
-5. **The course notes wait**, by Andy's decision (2026-09-04), and the Dropbox
-   course directory is *not* to be `git init`-ed -- too messy. The method for
+5. **The course notes wait**, by Andy's decision (2026-09-04), and his course
+   directory is *not* to be `git init`-ed -- too messy. The method for
    that revision, if it comes, was moved out of this repo when it was published
    (it is about the notes, not the model) and lives with the course material;
    the errata for the hillslopes chapter was handed to Andy as a file and
