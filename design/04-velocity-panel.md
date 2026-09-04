@@ -59,12 +59,26 @@ caption has to say so or students will read it as the base of the soil.
 
 ## Parameters chosen here
 
-- **`Z_DISPLAY = 3.0 m`, fixed.** *A proposal.* From `probe_c`: 3 m captures
-  99.8% of the flux at the default `H* = 0.5 m`, 95.0% at `H* = 1.0`, and
-  77.7% at the largest `H* = 2.0`. Fixed rather than scaled to `H*` on purpose
-  -- a depth axis that moves while a student drags the slider destroys exactly
-  the comparison the panel exists to support, and a fixed axis makes "the
-  moving layer reaches deeper" directly visible.
+- **Panel depth is derived from the model's own depth scale, not hand-picked.**
+  Andy's correction: how deep to draw depends on the scale of the model, so a
+  bare number in metres is the wrong kind of constant -- it silently stops
+  being right the moment the model is rescaled. The rule differs between the
+  two renderings, for a reason:
+
+  - **The static figure** has a single `H*`, so it follows that `H*` directly:
+    `ZETA_EFOLDINGS = 4.0`, i.e. `Z_DISPLAY = 4 H*`. The panel then looks the
+    same at every scale and always shows `1 - e^-4 = 98.2%` of the flux.
+  - **The interactive demo** cannot do that: an axis derived from the *current*
+    `H*` would move while a student drags the slider, destroying exactly the
+    comparison the panel exists to support. It uses the slider's upper bound
+    instead, `Z_DISPLAY = Z_DISPLAY_IN_HSTAR_MAX * HS_MAX`, which still follows
+    a rescaled model but never moves during use.
+
+  `Z_DISPLAY_IN_HSTAR_MAX = 1.0` is *a proposal*, and the one number left to
+  taste. At 1.0 the deepest slider setting fills the panel and shows 63.2% of
+  the flux while the default `H* = 0.5 m` keeps its motion in the top quarter;
+  at 1.5 the deepest shows 77.7% and the default is squeezed into the top
+  sixth. Flux fractions from `probe_c`.
 - **Colour scale fixed to ±`E L / (2 H*)`**, the *steady* surface velocity at
   the toe. *A proposal.* This depends only on the sliders, so it does not
   flicker frame to frame, and the colours saturate as the hill approaches its

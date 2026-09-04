@@ -38,11 +38,22 @@ K_MIN, K_MAX, K0 = 0.01, 0.05, 0.02          # [m/yr] at unit slope
 HS_MIN, HS_MAX, HS0 = 0.25, 2.0, 0.5         # [m]
 E_MIN, E_MAX, E0 = -0.05, 0.10, 0.05         # [mm/yr], positive = incising
 
+#: How deep the velocity panel reaches, as a multiple of the *largest* H* the
+#: slider offers.  Deriving it from the model's own depth scale means the panel
+#: follows a rescaled model instead of needing a new hand-picked number; taking
+#: the slider's upper bound rather than its current value means the axis does
+#: not move under a student dragging the slider, which would destroy exactly
+#: the comparison the panel exists to support.
+#:
+#: At 1.0 the deepest setting fills the panel and shows 63.2% of the flux,
+#: while the default H* = 0.5 m keeps its motion in the top quarter.  At 1.5
+#: the deepest setting shows 77.7% and the default is squeezed into the top
+#: sixth.  One constant, and it is a proposal either way.  See design/04.
+Z_DISPLAY_IN_HSTAR_MAX = 1.0
+
 #: Depth shown in the velocity panel [m].  A viewing choice, not the base of
-#: the soil -- there is no bedrock in this model.  Fixed rather than scaled to
-#: H*, so that the axis does not move under a student dragging the slider.
-#: probe_c: 3 m holds 99.8% of the flux at H* = 0.5 m and 77.7% at H* = 2.0 m.
-Z_DISPLAY = 3.0
+#: the soil -- there is no bedrock in this model.
+Z_DISPLAY = Z_DISPLAY_IN_HSTAR_MAX * HS_MAX
 N_ZETA = 121
 
 # Explicit diffusion is stable for dt <= dx**2 / 2D.  The sliders change D

@@ -15,7 +15,12 @@ from matplotlib.colors import TwoSlopeNorm
 
 from hillcreep import Hillslope
 
-Z_DISPLAY = 3.0          # depth shown in the lower panel [m]; design 04
+#: How deep the lower panel reaches, in e-folding depths.  A static figure has
+#: a single H*, so unlike the interactive demo it can follow that H* directly:
+#: the panel then looks the same whatever the model's scale, and always shows
+#: the same 1 - exp(-4) = 98.2% of the flux.  The demo cannot do this, because
+#: its axis would move while a student drags the slider (design 04).
+ZETA_EFOLDINGS = 4.0
 N_ZETA = 121
 
 
@@ -33,7 +38,8 @@ def main():
                   incision_rate=a.E * 1e-3)
     h.run(a.kyr * 1e3)
 
-    zeta = np.linspace(0.0, Z_DISPLAY, N_ZETA)
+    z_display = ZETA_EFOLDINGS * h.H_star
+    zeta = np.linspace(0.0, z_display, N_ZETA)
     u = h.velocity_field(zeta) * 1e3                 # mm/yr
     u_max = np.max(np.abs(u))
 
@@ -70,7 +76,7 @@ def main():
     cb.set_label("Downslope creep velocity  $u$  [mm/yr]\n"
                  r"$\leftarrow$ moving left      moving right $\rightarrow$")
 
-    ax_u.text(0.5 * h.length, 0.30 * Z_DISPLAY,
+    ax_u.text(0.5 * h.length, 0.30 * z_display,
               "no bedrock: the panel bottom is a viewing\n"
               "depth, not the base of the soil",
               ha="center", va="center", fontsize=8, color="0.35")
