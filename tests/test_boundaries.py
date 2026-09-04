@@ -123,3 +123,22 @@ def test_aggradation_runs_without_raising():
     h.incision_rate = -0.05e-3
     h.run(3.0e5)                                        # buries the toes
     assert h.exposed_length < h.length
+
+
+def test_changing_the_rate_refreshes_the_mask_without_stepping():
+    """Derived state must not lag its input.
+
+    Which nodes the rivers hold depends on the rate, so a rate change with no
+    time step left `active` describing the rivers' previous behaviour. A paused
+    demo redrawing after a slider move reported a fully buried hillslope with
+    the rate already back at zero -- the display contradicting the model, and
+    only correcting itself once the animation was restarted.
+    """
+    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h.incision_rate = -0.05e-3
+    h.run(1.0e5)
+    assert h.exposed_length < h.length          # buried while aggrading
+
+    h.incision_rate = 0.0                       # no run() call
+    assert h.exposed_length == h.length
+    assert h.active[1:-1].all()

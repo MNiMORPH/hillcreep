@@ -138,6 +138,12 @@ class Hillslope(object):
     @incision_rate.setter
     def incision_rate(self, value):
         self.left.incision_rate = self.right.incision_rate = float(value)
+        # Which nodes the rivers hold depends on the *rate*, not only on the
+        # bed, so the mask goes stale the moment the rate changes. Refresh it
+        # here rather than waiting for the next step: anything that reads the
+        # model between steps -- a paused demo redrawing after a slider move --
+        # would otherwise report the state the rivers were in before.
+        self.apply_boundaries()
 
     # -- the transport law ------------------------------------------------
 
