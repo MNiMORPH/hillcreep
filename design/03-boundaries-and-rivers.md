@@ -22,13 +22,17 @@ z - z_river = E * x * (L - x) / (2 * D)
 onlap code of the next section exists it simply lifts the boundary nodes
 without burying anything.
 
-## What is built but not implemented: onlap
+## Onlap: implemented 2026-09-04
 
 Aggradation that buries the hillslope toe is a **moving-boundary** problem: as
 the alluvial surface rises past the hillslope profile, the contact migrates
-upslope and the hillslope domain shrinks. Retrofitting that into a solver
-written against fixed end nodes means touching every routine. So the structure
-goes in now, and only the branch is left empty:
+upslope and the hillslope domain shrinks. The structure was built first and the
+branch left empty; the code went in afterwards, and **the claim that nothing
+outside `apply_boundaries()` would need to change held** -- the implementation
+touched that one method plus the two steady-form helpers, which now measure
+across the exposed span instead of the full grid.
+
+The structure that made it cheap:
 
 - the boundary is a `River` object holding its bed elevation and its rate, not
   a bare number spliced into `z[0]` and `z[-1]`;
@@ -63,8 +67,26 @@ test in reverse), and whether the deposited sediment is tracked as a volume or
 merely as a level (the level alone is enough to move the boundary, and is what
 the quote describes).
 
-Nothing outside `apply_boundaries()` should need to change. That claim is what
-the structure is for, and it is worth testing when the time comes.
+One thing the design did not anticipate, found by running it: **re-emergence is
+free.** Because the mask is rebuilt from scratch on every call, a node that is
+no longer under the alluvial surface simply becomes active again. No bookkeeping
+was needed for it at all.
+
+The second question -- volume or level -- is answered by the quote: the level
+alone is enough to move the boundary, and no sediment volume is tracked. The
+consequence, which is physically right and worth stating, is that mass is not
+conserved within the hillslope. It should not be: the river is *delivering*
+sediment from outside.
+
+### One ordering trap, paid for
+
+The flux must be computed against the bed as it stands at the *start* of a step,
+with the rivers moved afterwards. Moving them first means node 1 sees an
+already-lowered boundary, and the steady parabola drifts off its own fixed
+point by `D E dt² / dx²` per step -- 3e-7 m at the usual settings. Small, and
+purely an artefact of operator ordering rather than of the physics, so it is
+free to avoid. `test_the_steady_parabola_is_a_fixed_point_in_the_falling_frame`
+catches it.
 
 ## Rejected: independent left and right rates
 
