@@ -90,16 +90,17 @@ class Hillslope(CreepingProfile):
         their depth-dependent flux equation; it needs its own name because it
         differs from a diffusivity by one power of length.
     dz_u : float
-        Creep e-folding depth [m], the notes' ``Delta z_u``: the depth over
-        which downslope velocity falls by a factor of e.
+        Creep e-folding depth [m]: the depth over which downslope velocity
+        falls by a factor of e.  Of order 0.03-0.2 m in Hooke's Bevens Creek
+        profiles, whose whole soil is 0.42 m deep -- see ``probe_a``.
     incision_rate : float
         Bed lowering rate applied to both rivers [m/yr], positive for incision.
     z : array_like, optional
         Initial surface elevation [m].  Defaults to flat at the river bed.
     """
 
-    def __init__(self, length=100.0, n_nodes=101, k_u=0.02, dz_u=0.5,
-                 incision_rate=0.05e-3, z=None):
+    def __init__(self, length=100.0, n_nodes=101, k_u=0.02, dz_u=0.10,
+                 incision_rate=0.01e-3, z=None):
         CreepingProfile.__init__(self, length, n_nodes, k_u, dz_u)
 
         self.left = River(bed=0.0, incision_rate=incision_rate)

@@ -34,7 +34,7 @@ HEIGHT = 5.0                    # scarp height, crest to toe [m]
 ANGLE = 30.0                    # initial face angle [degrees]
 
 KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02       # [m/yr] at unit slope
-DZU_MIN, DZU_MAX, DZU0 = 0.25, 2.0, 0.5      # [m]
+DZU_MIN, DZU_MAX, DZU0 = 0.05, 0.40, 0.10      # [m]
 
 #: Depth reached by the velocity panel, as a multiple of the largest e-folding
 #: depth the slider offers. Derived from the model's own depth scale rather
@@ -87,7 +87,7 @@ k_u = pn.widgets.FloatSlider(
 dz_u = pn.widgets.FloatSlider(
     sizing_mode="stretch_width", max_width=SLIDER_WIDTH,
     name="Creep e-folding depth  Δz_u  [m]",
-    start=DZU_MIN, end=DZU_MAX, step=0.05, value=DZU0, format="0.00")
+    start=DZU_MIN, end=DZU_MAX, step=0.01, value=DZU0, format="0.00")
 
 readout = pn.pane.Markdown("", sizing_mode="stretch_width",
                            styles={"font-size": "1.05em"})

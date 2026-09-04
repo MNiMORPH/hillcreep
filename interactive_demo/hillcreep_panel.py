@@ -43,8 +43,8 @@ N_NODES = 101
 # slope of 1.0 (45 degrees), well outside where a linear creep law is
 # defensible.  See design/03.
 KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02          # [m/yr] at unit slope
-DZU_MIN, DZU_MAX, DZU0 = 0.25, 2.0, 0.5         # [m]
-E_MIN, E_MAX, E0 = -0.05, 0.10, 0.05         # [mm/yr], positive = incising
+DZU_MIN, DZU_MAX, DZU0 = 0.05, 0.40, 0.10         # [m]
+E_MIN, E_MAX, E0 = -0.010, 0.020, 0.010         # [mm/yr], positive = incising
 
 #: How deep the velocity panel reaches, as a multiple of the *largest* H* the
 #: slider offers.  Deriving it from the model's own depth scale means the panel
@@ -111,11 +111,11 @@ k_u = pn.widgets.FloatSlider(
 dz_u = pn.widgets.FloatSlider(
     sizing_mode="stretch_width", max_width=SLIDER_WIDTH,
     name="Creep e-folding depth  \u0394z_u  [m]",
-    start=DZU_MIN, end=DZU_MAX, step=0.05, value=DZU0, format="0.00")
+    start=DZU_MIN, end=DZU_MAX, step=0.01, value=DZU0, format="0.00")
 E = pn.widgets.FloatSlider(
     sizing_mode="stretch_width", max_width=SLIDER_WIDTH,
     name="River incision rate  \u03b5\u0307  [mm/yr]   (negative = aggrading)",
-    start=E_MIN, end=E_MAX, step=0.01, value=E0, format="0.00")
+    start=E_MIN, end=E_MAX, step=0.002, value=E0, format="0.000")
 
 #: The diffusivity written out as a function of the two decay parameters, with
 #: the current numbers substituted, plus how much hillslope is still exposed.

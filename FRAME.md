@@ -85,9 +85,14 @@ on this machine.
   `K = 0.005, 0.02, 0.08`:
   `python3 prototypes/probe_b_steady_surface_velocity.py`, and as
   `test_steady_surface_velocity_does_not_depend_on_K`.
-- **Shipped defaults** `L = 100 m, K = 0.02 m/yr, H* = 0.5 m, E = 0.05 mm/yr`
-  give `D = 0.01 m²/yr`, crest 6.25 m, toe slope 0.25 (14.0°), `u_s` at the toe
-  5.00 mm/yr, relaxation 1.01e5 yr.
+- **Shipped defaults** `L = 100 m, k_u = 0.02 m/yr, Δz_u = 0.10 m,
+  ε̇ = 0.01 mm/yr` give `k_hs = 0.002 m²/yr`, crest 6.25 m, toe slope 0.25
+  (14.0°), `u_s` at the toe 5.00 mm/yr, relaxation 5.07e5 yr. **Derived from
+  Roger Hooke's Bevens Creek profiles**, not chosen: his soil is 0.42 m deep
+  with motion in the top 5-15 cm, and his surface displacements are
+  1.1-8.4 mm/yr. An earlier set anchored `Δz_u` on Landlab's 1.0 m *default*,
+  which is a placeholder rather than a measurement, and was five times too
+  deep.
   `python3 prototypes/probe_a_no_bedrock_scales.py`.
 - **The 2013 course parameters imply 200 mm/yr of surface creep** -- one to two
   orders above measured soil creep. Same probe. This is the demo's premise
@@ -104,7 +109,7 @@ on this machine.
 ### Negative results and dead ends, so they are not re-walked
 
 - **Hairs, arrows and an exaggerated soil ribbon are all unusable** for drawing
-  the velocity at true scale: the crest is 6.25 m against a 0.5 m e-folding
+  the velocity at true scale: the crest is 6.25 m against a 0.10 m e-folding
   depth, and 50:1 at the course scale. Rejected on geometry in `design/04`.
 - **`bokeh.palettes.diverging_palette(Blues256, Reds256)` has a seam at its
   midpoint** -- which on this figure is the drainage divide. Replaced with an
@@ -127,7 +132,7 @@ on this machine.
    motion in the top quarter; at 1.5 the deepest shows 77.7% and the default is
    squeezed into the top sixth. The static figure uses a different rule for a
    stated reason (`design/04`).
-2. **Slider ranges** `K ∈ [0.01, 0.05]`, `H* ∈ [0.25, 2.0]`, `E ∈ [-0.05, 0.10]`
+2. **Slider ranges** `k_u ∈ [0.01, 0.05]`, `Δz_u ∈ [0.05, 0.40]`, `ε̇ ∈ [-0.010, 0.020]`
    mm/yr, bounded above by steepness. **Known issue, accepted by Andy:** the
    ranges can still be *combined* into indefensible states -- `E = 0.10` with
    `H* = 0.25` gives a 45° toe slope -- and nothing clamps or warns, because

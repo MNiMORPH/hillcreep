@@ -58,11 +58,11 @@ def test_a_scarp_records_only_the_product_of_diffusivity_and_time():
     is why a surveyed scarp cannot be given an age without a diffusivity from
     somewhere else.
     """
-    fast = Scarp(k_u=0.04, dz_u=0.5)          # k_hs = 0.02
-    slow = Scarp(k_u=0.01, dz_u=0.5)          # k_hs = 0.005, four times slower
+    fast = Scarp(k_u=0.04, dz_u=0.10)         # k_hs = 0.004
+    slow = Scarp(k_u=0.01, dz_u=0.10)         # k_hs = 0.001, four times slower
 
-    fast.run(5.0e3)                            # k_hs t = 100 m2
-    slow.run(2.0e4)                            # k_hs t = 100 m2
+    fast.run(2.5e4)                            # k_hs t = 100 m2
+    slow.run(1.0e5)                            # k_hs t = 100 m2
 
     assert np.isclose(fast.morphologic_age, slow.morphologic_age)
     assert np.isclose(fast.morphologic_age, 100.0)
@@ -89,10 +89,10 @@ def test_reset_returns_the_freshly_cut_scarp():
 
 def test_the_scarp_shares_the_hillslope_transport_law():
     """Same k_hs, same velocity profile -- the point of the shared base class."""
-    s = Scarp(k_u=0.02, dz_u=0.5)
-    assert s.k_hs == 0.02 * 0.5
+    s = Scarp(k_u=0.02, dz_u=0.10)
+    assert s.k_hs == 0.02 * 0.10
 
-    zeta = np.array([0.0, 0.5, 1.0])
+    zeta = np.array([0.0, 0.10, 0.20])
     u = s.velocity_field(zeta)
     assert np.allclose(u[1], u[0] / math.e)
     assert np.allclose(u[2], u[0] / math.e ** 2)

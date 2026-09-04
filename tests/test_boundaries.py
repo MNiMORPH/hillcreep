@@ -7,17 +7,17 @@ from hillcreep import Hillslope
 
 
 def test_both_rivers_lower_at_the_prescribed_rate():
-    h = Hillslope(incision_rate=0.05e-3)
-    h.run(1.0e4, dt=10.0)
+    h = Hillslope(incision_rate=0.01e-3)
+    h.run(1.0e4, dt=50.0)
 
-    expected = -0.05e-3 * 1.0e4
+    expected = -0.01e-3 * 1.0e4
     assert np.isclose(h.left.bed, expected)
     assert np.isclose(h.right.bed, expected)
     assert h.z[0] == h.left.bed and h.z[-1] == h.right.bed
 
 
 def test_the_hill_stays_symmetric_when_both_rivers_share_a_rate():
-    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     h.run(1.0e5)
     assert np.allclose(h.z, h.z[::-1], rtol=0.0, atol=1e-12)
 
@@ -45,7 +45,7 @@ def _aggrade_to(h, bed):
 
 def test_aggrading_rivers_bury_the_toes_and_shorten_the_hillslope():
     """The coupling, not a cosmetic fill: burying a toe makes the hill shorter."""
-    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = _steady_hill(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     assert h.exposed_length == h.length
 
     lengths = []
@@ -60,7 +60,7 @@ def test_aggrading_rivers_bury_the_toes_and_shorten_the_hillslope():
 
 
 def test_buried_nodes_sit_at_the_fill_elevation_and_do_not_evolve():
-    h = _aggrade_to(_steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3), 2.0)
+    h = _aggrade_to(_steady_hill(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3), 2.0)
 
     buried = ~h.active
     assert buried.sum() > 2                             # more than the two ends
@@ -85,7 +85,7 @@ def test_re_incision_leaves_a_fill_terrace_that_then_diffuses():
     never make a terrace, which is the wrong physics: sediment that was
     actually deposited does not vanish when the river cuts back down.
     """
-    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = _steady_hill(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     original_toe = h.z[5]
 
     _aggrade_to(h, 3.0)
@@ -93,7 +93,7 @@ def test_re_incision_leaves_a_fill_terrace_that_then_diffuses():
     assert np.isclose(h.z[5], 3.0)                   # sediment deposited on it
     assert h.z[5] > original_toe                     # the toe is buried, not kept
 
-    h.incision_rate = 0.05e-3                        # rivers cut back down
+    h.incision_rate = 0.01e-3                        # rivers cut back down
     h.left.bed = h.right.bed = 1.0
     h.apply_boundaries()
     assert h.active[5]
@@ -107,7 +107,7 @@ def test_re_incision_leaves_a_fill_terrace_that_then_diffuses():
 
 
 def test_a_fully_buried_hillslope_is_flat_and_has_no_exposed_span():
-    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = _steady_hill(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     _aggrade_to(h, h.z.max() + 1.0)
 
     assert h.exposed_span() is None
@@ -119,8 +119,8 @@ def test_a_fully_buried_hillslope_is_flat_and_has_no_exposed_span():
 
 def test_aggradation_runs_without_raising():
     """The whole point of this change: a negative rate used to be an error."""
-    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
-    h.incision_rate = -0.05e-3
+    h = _steady_hill(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
+    h.incision_rate = -0.01e-3
     h.run(3.0e5)                                        # buries the toes
     assert h.exposed_length < h.length
 
@@ -134,9 +134,9 @@ def test_changing_the_rate_refreshes_the_mask_without_stepping():
     the rate already back at zero -- the display contradicting the model, and
     only correcting itself once the animation was restarted.
     """
-    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
-    h.incision_rate = -0.05e-3
-    h.run(1.0e5)
+    h = _steady_hill(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
+    h.incision_rate = -0.01e-3
+    h.run(5.0e5)
     assert h.exposed_length < h.length          # buried while aggrading
 
     h.incision_rate = 0.0                       # no run() call

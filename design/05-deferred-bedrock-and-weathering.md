@@ -32,7 +32,7 @@ published limits as free tests: `Δz_u → ∞` gives Heimsath et al. (2005)
 
 **The honest bottom of the velocity panel.** With bedrock the lower panel gets
 a real floor instead of the viewing choice of design 04. Note the law still
-does *not* force velocity to zero at the contact: at `h_m = 1 m, Δz_u = 0.5 m` the
+does *not* force velocity to zero at the contact: at `h_m = 0.2 m, Δz_u = 0.10 m` the
 basal velocity is `u_s·e^(-2) = 13.5%` of the surface value. That is inherited
 from Johnstone & Hilley, not introduced here, and it will need saying in the
 caption because students will ask.

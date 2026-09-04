@@ -22,7 +22,7 @@ import numpy as np
 
 L, NX = 100.0, 101
 DX = L / (NX - 1)
-K_U, DZ_U = 0.02, 0.5
+K_U, DZ_U = 0.02, 0.10
 K_HS = K_U * DZ_U
 DT = 2.5
 
@@ -58,7 +58,7 @@ def exposed_length(active):
 
 x = np.linspace(0.0, L, NX)
 # Start from the steady parabola for E = 0.05 mm/yr: crest 6.25 m.
-edot = 0.05e-3
+edot = 0.01e-3
 z0 = edot / (2.0 * K_HS) * x * (L - x)
 
 print("(1) Raise a flat sediment surface through a steady hillslope.")

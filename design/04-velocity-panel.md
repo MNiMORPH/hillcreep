@@ -9,7 +9,7 @@ with tens of metres of relief?
 ## The scale problem, with the number
 
 At the shipped defaults (`probe_a`) the steady crest stands **6.25 m** above
-base level while the creep e-folding depth is **0.5 m** -- and at Andy's course
+base level while the creep e-folding depth is **0.10 m** -- and at Andy's course
 scale the ratio is 50 m against ~1 m, i.e. **50:1**. Anything drawn to true
 vertical scale beneath the surface -- profile "hairs", arrows, a shaded ribbon
 -- is a smear one pixel tall. This kills the obvious renderings outright, not
@@ -76,7 +76,7 @@ caption has to say so or students will read it as the base of the soil.
 
   `Z_DISPLAY_IN_HSTAR_MAX = 1.0` is *a proposal*, and the one number left to
   taste. At 1.0 the deepest slider setting fills the panel and shows 63.2% of
-  the flux while the default `H* = 0.5 m` keeps its motion in the top quarter;
+  the flux while the default `Δz_u = 0.10 m` keeps its motion in the top quarter;
   at 1.5 the deepest shows 77.7% and the default is squeezed into the top
   sixth. Flux fractions from `probe_c`.
 - **Colour scale fixed to ±`E L / (2 H*)`**, the *steady* surface velocity at

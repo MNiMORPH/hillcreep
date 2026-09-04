@@ -62,7 +62,7 @@ class Scarp(CreepingProfile):
         linear transport law would produce.
     """
 
-    def __init__(self, length=240.0, n_nodes=241, k_u=0.02, dz_u=0.5,
+    def __init__(self, length=240.0, n_nodes=241, k_u=0.02, dz_u=0.10,
                  height=5.0, angle=30.0):
         CreepingProfile.__init__(self, length, n_nodes, k_u, dz_u)
         self.height = float(height)

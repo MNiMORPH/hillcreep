@@ -56,13 +56,13 @@ pytest                       # 13 tests, one per claim
 ```python
 from hillcreep import Hillslope
 
-hill = Hillslope(length=100., k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+hill = Hillslope(length=100., k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
 hill.run(3.0e5)                       # years
 
-hill.k_hs                             # 0.01 m2/yr  = k_u * dz_u
+hill.k_hs                             # 0.002 m2/yr  = k_u * dz_u
 hill.equilibrate()                    # impose the steady form directly
 
-hill.incision_rate = -0.05e-3         # rivers aggrade instead
+hill.incision_rate = -0.01e-3         # rivers aggrade instead
 hill.run(6.0e4)
 hill.exposed_length                   # m of hillslope not yet buried
 
@@ -92,9 +92,9 @@ so `hillcreep` must be installed here, not merely wheeled for the browser.
 |---|---|---|
 | `L` | 100 m | hillslope width |
 | `k_u` | 0.02 m/yr | surface creep velocity at unit slope |
-| `Δz_u` | 0.5 m | creep e-folding depth |
-| `ε̇` | 0.05 mm/yr | river incision rate |
-| → `k_hs` | 0.01 m²/yr | |
+| `Δz_u` | 0.10 m | creep e-folding depth, from Hooke's Bevens Creek profiles |
+| `ε̇` | 0.01 mm/yr | river incision rate, **forced** by `u_s = ε̇L/2Δz_u` |
+| → `k_hs` | 0.002 m²/yr | |
 | → crest | 6.25 m | above base level, at steady state |
 | → toe slope | 0.25 (14.0°) | |
 | → `u_s` at the toe | 5.00 mm/yr | measurable, and measured |
@@ -109,6 +109,15 @@ of 200 mm/yr, one to two orders above anything measured. The script never
 claimed a creep profile, so this is not a criticism of it; it is the premise of
 this model working. Once `k_hs` is factored, parameter choices become checkable,
 and some of them fail.
+
+The same check caught one of my own. An earlier version of this model shipped
+`Δz_u = 0.5 m`, anchored on Landlab's `soil_transport_decay_depth` default of
+1.0 m — which is a placeholder in a function signature, not a measurement.
+Roger Hooke's Bevens Creek profiles put the whole soil at 0.42 m with motion in
+the top 5–15 cm, so 0.5 m was deeper than the soil it was supposed to describe.
+Correcting it moved the predicted surface creep from 5 mm/yr onto the measured
+range, and `k_hs` fell from 0.01 to 0.002 m²/yr — which is what it should do,
+since `k_hs` is a result here and not an input.
 
 ## What this model does not do
 

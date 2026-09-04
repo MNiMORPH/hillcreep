@@ -13,7 +13,7 @@ def test_diffusivity_is_exactly_the_product_of_the_two_sliders():
 
 def test_velocity_field_integrates_to_the_flux():
     """int_0^inf u dzeta = q.  This is the identity the whole model rests on."""
-    h = Hillslope(k_u=0.02, dz_u=0.5)
+    h = Hillslope(k_u=0.02, dz_u=0.10)
     h.z = 20.0 * np.sin(np.pi * h.x / h.length)     # any non-trivial profile
     h.apply_boundaries()
 
@@ -37,7 +37,7 @@ def test_face_form_flux_matches_the_constant_diffusivity_stencil():
     becoming a function of x (design 05).  This test is what lets that claim be
     made without cost.
     """
-    h = Hillslope(k_u=0.02, dz_u=0.5)
+    h = Hillslope(k_u=0.02, dz_u=0.10)
     # Arbitrary elevations, deliberately not a hillslope: this tests the flux
     # operator, so the profile should exercise it rather than flatter it.
     # apply_boundaries() is not called -- the boundaries are not under test,
@@ -56,7 +56,7 @@ def test_face_form_flux_matches_the_constant_diffusivity_stencil():
 
 
 def test_surface_velocity_is_zero_at_the_divide_and_opposed_at_the_toes():
-    h = Hillslope(k_u=0.02, dz_u=0.5)
+    h = Hillslope(k_u=0.02, dz_u=0.10)
     h.z = h.steady_profile()
     u_s = h.surface_velocity()
 

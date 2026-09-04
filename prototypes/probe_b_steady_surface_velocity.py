@@ -17,7 +17,7 @@ Run:  python3 prototypes/probe_b_steady_surface_velocity.py
 """
 import numpy as np
 
-L, E = 100., 0.05e-3          # hillslope width [m], incision rate [m/yr]
+L, E = 100., 0.01e-3          # hillslope width [m], incision rate [m/yr]
 
 print("Two independent routes to steady surface velocity, at dz_u = 0.5 m.")
 print("Route 1: u_s = k_u * S(x), S from the steady parabola z = E x (L-x) / 2D.")

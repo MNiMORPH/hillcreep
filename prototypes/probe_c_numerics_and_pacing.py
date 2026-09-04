@@ -19,8 +19,8 @@ import numpy as np
 L, NX = 100., 101
 DX = L / (NX - 1)
 KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02       # [m/yr]
-DZU_MIN, DZU_MAX, DZU0 = 0.25, 2.0, 0.5      # [m]
-E0 = 0.05e-3                              # [m/yr]
+DZU_MIN, DZU_MAX, DZU0 = 0.05, 0.40, 0.10      # [m]
+E0 = 0.01e-3                              # [m/yr]
 
 print("(1) Flux captured above a truncation depth Z_DISPLAY, as a fraction of")
 print("    the full integral k_u*dz_u*S.  Fraction = 1 - exp(-Z/dz_u).")

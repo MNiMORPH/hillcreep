@@ -12,7 +12,7 @@ def test_the_steady_parabola_is_a_fixed_point_in_the_falling_frame():
     dz/dt = D d2z/dx2 = -E for the parabola, so the whole surface translates
     downward with the rivers and its shape does not change.
     """
-    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     # equilibrate(), not a bare assignment to z: apply_boundaries has to run
     # so the active mask matches the profile. Assigning z directly leaves the
     # mask from construction -- all-inactive, since a flat hill sits exactly at
@@ -27,10 +27,10 @@ def test_the_steady_parabola_is_a_fixed_point_in_the_falling_frame():
 
 
 def test_the_profile_relaxes_toward_the_steady_parabola():
-    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     misfit = [np.max(np.abs(h.z - h.steady_profile()))]
     for _ in range(4):
-        h.run(1.0e5)
+        h.run(5.0e5)          # relaxation is L**2/(pi**2 k_hs) = 5.1e5 yr
         misfit.append(np.max(np.abs(h.z - h.steady_profile())))
 
     assert np.all(np.diff(misfit) < 0.0)        # monotonically closing
@@ -45,7 +45,7 @@ def test_steady_surface_velocity_does_not_depend_on_K():
     Both are exact for a quadratic, so this is a machine-precision comparison.
     """
     for k_u in (0.005, 0.02, 0.08):
-        h = Hillslope(k_u=k_u, dz_u=0.5, incision_rate=0.05e-3)
+        h = Hillslope(k_u=k_u, dz_u=0.10, incision_rate=0.01e-3)
         h.z = h.steady_profile()
 
         from_profile = h.surface_velocity()
@@ -64,12 +64,12 @@ def test_a_hill_with_no_incision_decays_at_the_analytic_rate():
     threshold was invented, so the threshold was replaced by the analytic
     prediction -- a far stronger test than the one it replaces.
     """
-    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.0)
+    h = Hillslope(k_u=0.02, dz_u=0.10, incision_rate=0.0)
     shape = np.sin(np.pi * h.x / h.length)
     h.z = 10.0 * shape
     h.apply_boundaries()
 
-    t_end = 2.0e5
+    t_end = 1.0e6          # ~2 relaxation times at k_hs = 0.002
     h.run(t_end)
 
     decay = np.exp(-h.k_hs * np.pi ** 2 * t_end / h.length ** 2)
@@ -87,7 +87,7 @@ def test_equilibrate_reproduces_the_steady_form_and_refuses_when_there_is_none()
     steady_profile returns a downward parabola that the flooding then flattens
     completely -- a silent wrong answer that looks like a legitimate result.
     """
-    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h = Hillslope(k_u=0.02, dz_u=0.10, incision_rate=0.01e-3)
     h.equilibrate()
     assert np.allclose(h.z, h.steady_profile(), rtol=0.0, atol=1e-12)
     assert np.isclose(h.z.max() - h.left.bed, 6.25)
@@ -99,6 +99,6 @@ def test_equilibrate_reproduces_the_steady_form_and_refuses_when_there_is_none()
     assert np.allclose(h.z, before - h.incision_rate * dt, rtol=0.0, atol=1e-12)
 
     for rate in (0.0, -0.05e-3):
-        bad = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=rate)
+        bad = Hillslope(k_u=0.02, dz_u=0.10, incision_rate=rate)
         with pytest.raises(ValueError, match="no steady form"):
             bad.equilibrate()
