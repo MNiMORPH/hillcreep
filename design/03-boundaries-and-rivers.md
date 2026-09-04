@@ -1,0 +1,60 @@
+# 03 -- Boundaries: rivers with prescribed rates
+
+## The question
+
+The hillslope's two ends are rivers. What do they do, and how is the code
+arranged so that rivers which *aggrade* -- rise, and bury the base of the
+hillslope -- can be added later without rewriting the boundary handling?
+
+## What ships now
+
+Both rivers lower (or raise) their beds at a single prescribed rate `E`,
+positive for incision, matching the sign of Andy's 2013 `zdot_channel`. The two
+sides are symmetric, which keeps the divide at the centre and keeps the steady
+parabola valid as a live check curve:
+
+```
+z - z_river = E * x * (L - x) / (2 * D)
+```
+
+`E = 0` is allowed and is a lesson in itself: the hill decays toward flat.
+`E < 0` is accepted by the model and raises the river beds, but until the
+onlap code of the next section exists it simply lifts the boundary nodes
+without burying anything.
+
+## What is built but not implemented: onlap
+
+Aggradation that buries the hillslope toe is a **moving-boundary** problem: as
+the alluvial surface rises past the hillslope profile, the contact migrates
+upslope and the hillslope domain shrinks. Retrofitting that into a solver
+written against fixed end nodes means touching every routine. So the structure
+goes in now, and only the branch is left empty:
+
+- the boundary is a `River` object holding its bed elevation and its rate, not
+  a bare number spliced into `z[0]` and `z[-1]`;
+- an `active` boolean mask over nodes says which the solver evolves. Today it
+  is all-`True` except the two ends;
+- `apply_boundaries()` is the single place that reads the rivers and writes
+  elevations, with the onlap branch present and raising `NotImplementedError`.
+
+When onlap is implemented it becomes: find where `z < z_river`, set those nodes
+to `z_river`, and drop them from `active`. Nothing else should need to change.
+That claim is what the structure is for, and it is worth testing when the time
+comes.
+
+## Rejected: independent left and right rates
+
+Asymmetric incision migrates the divide toward the faster-incising side, which
+is a genuinely good lesson and costs nothing in the solver. It was rejected for
+now on one ground only: there is no steady state in that frame, so the dashed
+check curve -- the thing that tells a student what the profile is chasing --
+would have to be dropped or shown conditionally. Revisit if the check curve
+turns out to matter less than the divide migration.
+
+## Parameters chosen here
+
+- **`E` slider range: -0.05 to +0.10 mm/yr, default 0.05.** *A proposal.* The
+  upper bound is set by steepness: `probe_a` shows `E = 0.2 mm/yr` at the
+  default `K` and `H*` gives a steady toe slope of 1.0 (45°), far outside where
+  a linear creep law is defensible. At `E = 0.10` the toe slope is 0.50
+  (26.6°). The negative end is arbitrary pending the onlap code.
