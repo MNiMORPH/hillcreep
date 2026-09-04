@@ -74,7 +74,8 @@ caption has to say so or students will read it as the base of the soil.
     instead, `Z_DISPLAY = Z_DISPLAY_IN_DZU_MAX * DZU_MAX`, which still follows
     a rescaled model but never moves during use.
 
-  `Z_DISPLAY_IN_DZU_MAX = 1.0` is *a proposal*. At 1.0 the deepest slider
+  `Z_DISPLAY_IN_DZU_MAX = 1.0` — **confirmed by Andy, 2026-09-04**, so this
+  is settled rather than proposed. At 1.0 the deepest slider
   setting fills the panel and shows 63.2% of the flux, while the default
   `Δz_u = 0.10 m` keeps its motion in the top half. Flux fractions from
   `probe_c`.

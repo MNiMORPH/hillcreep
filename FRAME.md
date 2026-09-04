@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `e49e096`.
+claim below against git and disk before trusting it. Current to `00d1f91`.
 
 ## (a) Origin -- why this model exists
 
@@ -42,8 +42,8 @@ notes' own `k_hs`. Crosswalk in `README.md`.
    keeps `z` and the fill separate. See `design/03`.
 
    **Next** is Andy's to choose. Nothing is blocking.
-2. **One parameter proposal open**: `Z_DISPLAY_IN_DZU_MAX` (see (e)). Blocks
-   nothing.
+2. **No parameter proposals are open.** `Z_DISPLAY_IN_DZU_MAX = 1.0` was the
+   last one and Andy confirmed it (2026-09-04).
 3. Mass wasting, eventually (`design/06`). Two routes sketched; neither
    scheduled. This is what the steep corner of the slider space is waiting for.
 4. Bedrock and weathering remain *available* but decided against for now
@@ -124,14 +124,11 @@ on this machine.
 
 ## (e) Parameters chosen but not asked for -- proposals, still open
 
-1. **`Z_DISPLAY_IN_DZU_MAX = 1.0`** in the demo, so the velocity panel reaches
-   `1.0 × Δz_u_max = 0.20 m`. Andy settled the *principle* -- the depth must be
-   derived from the model's scale, not a hand-picked number in metres -- and
-   this multiplier is what remains to taste. At 1.0 the deepest slider setting
-   fills the panel and shows 63.2% of the flux while the default keeps its
-   motion in the top half. The multiplier was never the problem: the bound
-   was, at 0.40 m -- deeper than any e-folding depth Hooke measured. The static figure uses a different rule for a
-   stated reason (`design/04`).
+1. ~~`Z_DISPLAY_IN_DZU_MAX = 1.0`~~ **— settled.** The velocity panel shows
+   exactly one e-folding at the deepest slider setting, so it reaches
+   `1.0 × Δz_u_max = 0.20 m` and the default fills its top half. Confirmed by
+   Andy, 2026-09-04.
+
 2. **Slider ranges** `k_u ∈ [0.01, 0.05]`, `Δz_u ∈ [0.03, 0.20]`, `ε̇ ∈ [-0.010, 0.020]`
    mm/yr, bounded above by steepness. **Known issue, accepted by Andy:** the
    ranges can still be *combined* into indefensible states -- `E = 0.10` with
