@@ -46,3 +46,9 @@ geomorphically interesting (design 05).
   `NotImplementedError` rather than misbehaving quietly (design 03).
 - Left and right rivers share one rate, so the divide cannot migrate
   (design 03).
+- **Slider combinations can reach indefensible slopes.** Each slider is bounded
+  so that none alone produces one, but `E = 0.10 mm/yr` with `H* = 0.25 m`
+  gives a steady toe slope of 1.0 (45°), where a linear creep law has no
+  business. Nothing clamps and nothing warns: mass wasting is the right answer
+  rather than a guard rail, and a threshold now would occupy its place
+  (design 06).

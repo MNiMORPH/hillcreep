@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `b78e87b`.
+claim below against git and disk before trusting it. Current to `2e2f3e6`.
 
 ## (a) Origin -- why this model exists
 
@@ -26,18 +26,24 @@ see `examples/browser_running.png`.
 
 ## (b) Plan and trajectory -- as the next action
 
-1. **Two parameter proposals are waiting on Andy** (see (e)); neither blocks
-   anything.
-2. **Next: decide whether bedrock comes back**, per
-   `design/05-deferred-bedrock-and-weathering.md`. Andy dropped it deliberately
-   to keep `D = K H*` exact. The cost is that `H*` cannot do the one thing that
-   makes it geomorphically interesting -- saturate once it exceeds the soil
-   thickness. This is the largest open design question.
-3. Aggradation onlap: the hook is built (`River` objects, `active` mask, one
-   `apply_boundaries()`), the code is not written. `apply_boundaries()` raises
+**Settled, do not reopen as oversights:** no bedrock (`design/05`); steep
+slider combinations left unclamped and unwarned, with mass wasting as the
+eventual answer rather than a guard rail (`design/06`).
+
+1. **Next: aggradation onlap** -- Andy's stated next item. The hook is built
+   (`River` objects, `active` mask, one `apply_boundaries()`) and the algorithm
+   is written down in `design/03` in his words: flood a level set with sediment,
+   set drowned nodes to it, drop them from `active`, and the hillslope becomes
+   genuinely *shorter*. `apply_boundaries()` currently raises
    `NotImplementedError` rather than misbehaving quietly.
-4. Weathering, after bedrock. Landlab's `ExponentialWeatherer` form; the
-   density ratio `rho_r/rho_s` should be named before it is needed.
+2. **One parameter proposal open**: `Z_DISPLAY_IN_HSTAR_MAX` (see (e)). Blocks
+   nothing.
+3. Mass wasting, eventually (`design/06`). Two routes sketched; neither
+   scheduled. This is what the steep corner of the slider space is waiting for.
+4. Bedrock and weathering remain *available* but decided against for now
+   (`design/05`). `rho_r/rho_s` goes in with the first line of bedrock, not
+   before -- a constant fixed at 1.0 that participates in nothing would read as
+   though the model accounts for a density contrast it has never seen.
 5. Not yet done: no git remote, nothing pushed, no `docs/`, and the demo is not
    embedded in any course page.
 
@@ -102,21 +108,25 @@ on this machine.
 
 ## (e) Parameters chosen but not asked for -- proposals, still open
 
-1. **`Z_DISPLAY = 3.0 m`**, the depth shown in the velocity panel, fixed rather
-   than scaled to `H*`. Holds 99.8% of the flux at the default `H*` and 77.7%
-   at the largest. At the default it leaves the lower two-thirds of the panel
-   nearly empty; `2.0 m` would fill it better and still hold 98.2%. Surfaced to
-   Andy; not yet decided.
+1. **`Z_DISPLAY_IN_HSTAR_MAX = 1.0`** in the demo, so the velocity panel reaches
+   `1.0 × H*_max = 2.0 m`. Andy settled the *principle* -- the depth must be
+   derived from the model's scale, not a hand-picked number in metres -- and
+   this multiplier is what remains to taste. At 1.0 the deepest slider setting
+   fills the panel and shows 63.2% of the flux while the default keeps its
+   motion in the top quarter; at 1.5 the deepest shows 77.7% and the default is
+   squeezed into the top sixth. The static figure uses a different rule for a
+   stated reason (`design/04`).
 2. **Slider ranges** `K ∈ [0.01, 0.05]`, `H* ∈ [0.25, 2.0]`, `E ∈ [-0.05, 0.10]`
-   mm/yr, bounded above by steepness -- `E = 0.2 mm/yr` at the default `K` and
-   `H*` gives a 45° toe slope, outside where a linear creep law is defensible.
-   Note the ranges can still be *combined* into steep states; nothing clamps
-   them and nothing warns.
+   mm/yr, bounded above by steepness. **Known issue, accepted by Andy:** the
+   ranges can still be *combined* into indefensible states -- `E = 0.10` with
+   `H* = 0.25` gives a 45° toe slope -- and nothing clamps or warns, because
+   mass wasting is the right answer rather than a guard rail (`design/06`).
 3. **Colour scale** fixed to the steady toe velocity `E L / (2 H*)`; **elevation
    axis** to 1.18× the steady crest. Both depend only on the sliders, so neither
    rescales frame to frame.
-4. **`rho_r/rho_s` is not yet named anywhere.** It will be needed the moment
-   weathering exists; `design/05` proposes naming it now and setting it to 1.0.
+4. **`rho_r/rho_s` is not named anywhere, deliberately.** Confirmed as needed;
+   goes in with the first line of bedrock rather than sitting at 1.0 in the
+   meantime (`design/05`).
 
 ## (f) Guardrails
 
