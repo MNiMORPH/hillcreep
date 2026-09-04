@@ -199,30 +199,80 @@ class Hillslope(object):
         return safety * self.dx ** 2 / self.k_hs
 
     def apply_boundaries(self):
-        """Write the river beds into the elevation array.
+        """Write the river beds into the elevation array, flooding the toes.
 
-        The single place that couples rivers to the hillslope.  When aggrading
-        rivers are implemented, the onlap branch below is where they go: find
-        the nodes standing below the alluvial surface, set them to it, and drop
-        them from ``self.active``.  Nothing outside this method should need to
-        change -- that claim is the reason the structure exists.
+        The single place that couples rivers to the hillslope, and the whole of
+        the aggradation treatment.  The alluvial surface is a **level set**: one
+        flat elevation per river.  Flooding it means finding every node the
+        sediment has drowned, setting it to that elevation, and dropping it from
+        ``self.active`` -- after which the hillslope's boundary is the
+        shallowest still-active node and the hillslope is genuinely *shorter*.
+
+        That shortening is the point.  Burying a toe shortens the distance over
+        which the divide has to shed its material, so it changes the whole
+        profile; it is a coupling, not a cosmetic fill at the bottom of the
+        figure.
+
+        The mask is rebuilt from scratch every call, which is what makes
+        **re-emergence** free: when base level falls, a node that is no longer
+        under the alluvial surface becomes active again.  It comes back at the
+        *fill* elevation rather than its original one, so the deposit is left
+        behind as a terrace that then decays diffusively.  That is what
+        depositing sediment and then removing base level does.
         """
-        if self.left.bed > self.z[1] or self.right.bed > self.z[-2]:
-            raise NotImplementedError(
-                "A river bed has risen above its neighbouring hillslope node. "
-                "Burying the hillslope toe by aggradation is a moving-boundary "
-                "problem and is not implemented; see "
-                "design/03-boundaries-and-rivers.md.")
+        self.active[:] = True
+        self.active[0] = self.active[-1] = False
         self.z[0] = self.left.bed
         self.z[-1] = self.right.bed
 
+        n = self.z.size
+        i = 1
+        while i < n - 1 and self.z[i] < self.left.bed:
+            self.z[i] = self.left.bed
+            self.active[i] = False
+            i += 1
+        j = n - 2
+        while j > 0 and self.z[j] < self.right.bed:
+            self.z[j] = self.right.bed
+            self.active[j] = False
+            j -= 1
+
+    def exposed_span(self):
+        """Indices of the two nodes bounding the still-exposed hillslope.
+
+        Returns ``(i_left, i_right)``, the boundary nodes either side of the
+        active run, or ``None`` when the hillslope is completely buried.  These
+        are the ends the steady form is measured between, and they move inward
+        as the rivers aggrade.
+        """
+        idx = np.flatnonzero(self.active)
+        if idx.size == 0:
+            return None
+        return idx[0] - 1, idx[-1] + 1
+
+    @property
+    def exposed_length(self):
+        """Distance between the two exposed toes [m]. Zero when fully buried."""
+        span = self.exposed_span()
+        return 0.0 if span is None else self.x[span[1]] - self.x[span[0]]
+
     def advance(self, dt):
         """Advance the hillslope by one time step of ``dt`` years."""
-        self.left.advance(dt)
-        self.right.advance(dt)
-        # Conservation of mass: dz/dt = -dq/dx, with q on faces.
+        # Diffuse against the bed as it stands at the start of the step, then
+        # move the rivers, then flood.  ``apply_boundaries`` ran at the end of
+        # the previous step against this same bed, so the active mask already
+        # matches it and no material is transported across a toe the sediment
+        # has buried.
+        #
+        # Moving the rivers *before* the flux instead costs exactness: node 1
+        # would then see an already-lowered boundary, and the steady parabola
+        # would drift off its own fixed point by D E dt**2 / dx**2 per step
+        # (3e-7 m at the usual settings). Small, but it is an artefact of
+        # operator ordering rather than of the physics, and it is free to avoid.
         dzdt = -np.diff(self.q_m()) / self.dx
         self.z[1:-1] += dt * np.where(self.active[1:-1], dzdt, 0.0)
+        self.left.advance(dt)
+        self.right.advance(dt)
         self.apply_boundaries()
         self.t += dt
 
@@ -237,13 +287,43 @@ class Hillslope(object):
     def steady_profile(self):
         """Elevation of the steady form for the current settings [m].
 
-        Balancing uniform lowering at ``E`` against diffusion gives the
-        parabola ``z - z_river = E x (L - x) / (2 D)``.  Valid only while both
-        rivers share a rate, which is why they do (design 03).
+        Balancing uniform lowering at ``E`` against diffusion gives a parabola
+        between the two exposed toes,
+
+            z - z_toe = E (x - x_l)(x_r - x) / (2 k_hs)
+
+        measured across the **exposed** span rather than the full grid, so it
+        stays correct while aggradation has buried part of the hillslope.
+        Buried nodes are returned at the fill elevation.
+
+        There is no steady form while a river aggrades -- base level is rising,
+        so nothing balances -- and this returns a downward parabola for a
+        negative rate.  Callers that draw it should hide it when
+        ``incision_rate <= 0``.
         """
+        span = self.exposed_span()
         base = 0.5 * (self.left.bed + self.right.bed)
-        return base + (self.incision_rate / (2.0 * self.k_hs)
-                       * self.x * (self.length - self.x))
+        if span is None:
+            return np.full(self.x.size, base)
+        il, ir = span
+        xl, xr = self.x[il], self.x[ir]
+        toe = 0.5 * (self.z[il] + self.z[ir])
+        z = np.where((self.x >= xl) & (self.x <= xr),
+                     toe + (self.incision_rate / (2.0 * self.k_hs)
+                            * (self.x - xl) * (xr - self.x)),
+                     self.z)
+        return z
+
+    def equilibrate(self):
+        """Put the hillslope straight into its steady form.
+
+        The shape the profile is chasing, imposed rather than waited for.  A
+        relaxation takes of order ``L**2 / (pi**2 k_hs)`` -- about 1e5 years at
+        the usual settings, which is minutes of animation.  Meaningless while a
+        river aggrades, since no steady form exists then.
+        """
+        self.z = self.steady_profile()
+        self.apply_boundaries()
 
     def steady_surface_velocity(self):
         """Steady surface velocity ``u_s = E x' / dz_u`` at nodes [m/yr].
@@ -254,4 +334,9 @@ class Hillslope(object):
         decides how fast the surface must move to carry it.  Verified against
         the parabola route in ``prototypes/probe_b_steady_surface_velocity.py``.
         """
-        return self.incision_rate * (self.x - 0.5 * self.length) / self.dz_u
+        span = self.exposed_span()
+        if span is None:
+            return np.zeros(self.x.size)
+        il, ir = span
+        mid = 0.5 * (self.x[il] + self.x[ir])
+        return self.incision_rate * (self.x - mid) / self.dz_u

@@ -1,4 +1,4 @@
-"""One test per claim about the river boundaries and the active-node mask."""
+"""One test per claim about the river boundaries, aggradation and the mask."""
 
 import numpy as np
 import pytest
@@ -16,34 +16,89 @@ def test_both_rivers_lower_at_the_prescribed_rate():
     assert h.z[0] == h.left.bed and h.z[-1] == h.right.bed
 
 
-def test_aggradation_past_the_toe_raises_rather_than_silently_misbehaving():
-    """Burying the hillslope toe is a moving-boundary problem, not implemented.
-
-    The failure has to be loud: a quietly wrong answer here would look like a
-    result.  See design/03-boundaries-and-rivers.md.
-    """
-    h = Hillslope(incision_rate=-1.0e-3)          # negative: rivers aggrade
-    with pytest.raises(NotImplementedError, match="moving-boundary"):
-        h.run(1.0e5, dt=100.0)
-
-
-def test_a_node_dropped_from_the_active_mask_does_not_evolve():
-    """The hook aggradation will use: inactive nodes are held, not solved."""
-    h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.0)
-    h.z = 10.0 * np.sin(np.pi * h.x / h.length)
-    h.apply_boundaries()
-
-    pinned = 25
-    h.active[pinned] = False
-    held = h.z[pinned]
-
-    h.run(1.0e4)
-
-    assert h.z[pinned] == held
-    assert not np.isclose(h.z[pinned + 5], 10.0 * np.sin(np.pi * h.x[pinned + 5] / h.length))
-
-
 def test_the_hill_stays_symmetric_when_both_rivers_share_a_rate():
     h = Hillslope(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
     h.run(1.0e5)
     assert np.allclose(h.z, h.z[::-1], rtol=0.0, atol=1e-12)
+
+
+# -- aggradation -------------------------------------------------------------
+
+def _steady_hill(**kw):
+    h = Hillslope(**kw)
+    h.equilibrate()
+    return h
+
+
+def test_aggrading_rivers_bury_the_toes_and_shorten_the_hillslope():
+    """The coupling, not a cosmetic fill: burying a toe makes the hill shorter."""
+    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    assert h.exposed_length == h.length
+
+    lengths = []
+    for bed in (0.5, 1.0, 2.0, 4.0):
+        h.left.bed = h.right.bed = bed
+        h.apply_boundaries()
+        lengths.append(h.exposed_length)
+
+    assert lengths == sorted(lengths, reverse=True)     # strictly shortening
+    assert lengths[0] < h.length
+    assert np.isclose(lengths[-1], 62.0)                # probe_d, bed = 4 m
+
+
+def test_buried_nodes_sit_at_the_fill_elevation_and_do_not_evolve():
+    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h.left.bed = h.right.bed = 2.0
+    h.apply_boundaries()
+
+    buried = ~h.active
+    assert buried.sum() > 2                             # more than the two ends
+    assert np.allclose(h.z[buried], 2.0)
+
+    # Written first as "the buried set grows", which failed: it shrank from 18
+    # nodes to 2. That is the model being right. With the fill held, the
+    # exposed hill decays *onto* it, so drowned nodes are lifted to the fill
+    # level and stop being below it. The invariants that actually hold are the
+    # two below.
+    h.incision_rate = 0.0
+    h.run(2.0e4)
+    assert np.allclose(h.z[~h.active], 2.0)          # buried nodes sit on the fill
+    assert not (h.z[h.active] < 2.0).any()           # nothing exposed below it
+
+
+def test_a_buried_toe_re_emerges_as_a_fill_terrace_when_base_level_falls():
+    """Re-emergence is free because the mask is rebuilt every call.
+
+    The node comes back at the *fill* elevation, not its original one -- the
+    sediment was really deposited, and is left as a terrace that then decays.
+    """
+    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    original_toe = h.z[1]
+
+    h.left.bed = h.right.bed = 3.0
+    h.apply_boundaries()
+    assert not h.active[1]
+
+    h.left.bed = h.right.bed = 0.0
+    h.apply_boundaries()
+    assert h.active[1]
+    assert np.isclose(h.z[1], 3.0)
+    assert not np.isclose(h.z[1], original_toe)
+
+
+def test_a_fully_buried_hillslope_is_flat_and_has_no_exposed_span():
+    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h.left.bed = h.right.bed = h.z.max() + 1.0
+    h.apply_boundaries()
+
+    assert h.exposed_span() is None
+    assert h.exposed_length == 0.0
+    assert np.allclose(h.z, h.z[0])
+
+
+def test_aggradation_runs_without_raising():
+    """The whole point of this change: a negative rate used to be an error."""
+    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
+    h.incision_rate = -0.05e-3
+    h.run(3.0e5)                                        # buries the toes
+    assert h.exposed_length < h.length
