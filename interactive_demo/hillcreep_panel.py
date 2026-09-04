@@ -147,7 +147,7 @@ def _elevation_range(hill):
     steady_crest = (abs(hill.incision_rate) * hill.length ** 2
                     / (8.0 * hill.k_hs))
     return 1.18 * max(steady_crest,
-                      float(np.max(hill.surface())) - hill.left.bed, 1.0)
+                      float(np.max(hill.z)) - hill.left.bed, 1.0)
 
 
 def _colour_scale(hill):
@@ -175,7 +175,7 @@ def _redraw():
     hill = _sync()
     base = 0.5 * (hill.left.bed + hill.right.bed)
 
-    profile.data = {"x": hill.x, "z": hill.surface() - base}
+    profile.data = {"x": hill.x, "z": hill.z - base}
     # A hillslope whose base level is rising has no steady form to chase, so
     # the dashed curve is withdrawn rather than drawn as a meaningless
     # downward parabola.
