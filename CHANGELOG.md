@@ -36,14 +36,24 @@ geomorphically interesting (design 05).
   and a runnable probe behind each decision, with every quoted number produced
   by running the probe.
 
+### Added later the same day
+
+- **Aggradation.** A negative incision rate fills the valley: the alluvial
+  surface is a level set, ground beneath it stops moving, and the exposed
+  hillslope genuinely shortens. `Hillslope.surface()` is the visible ground,
+  `max(z, fill)`; the hillslope beneath is remembered, so re-incision exhumes
+  it rather than leaving an invented terrace.
+- `Hillslope.equilibrate()`, and a **Jump to equilibrium** button in the demo:
+  impose the steady form instead of waiting out the 10⁵-year relaxation. Raises
+  for a non-positive rate, where no steady form exists.
+- The demo writes `k_hs = k_u × Δz_u` out with the current numbers substituted,
+  and reports how much hillslope aggradation has buried.
+
 ### Known gaps
 
 - No bedrock, no soil thickness, no weathering (design 05). The model therefore
   cannot show the saturation of `k_hs` once `Δz_u` exceeds the soil thickness, which
   is the behaviour that makes `Δz_u` matter to a geomorphologist.
-- Aggrading rivers raise their beds but cannot bury the hillslope toe; the
-  structure for it is in place and `apply_boundaries()` raises
-  `NotImplementedError` rather than misbehaving quietly (design 03).
 - Left and right rivers share one rate, so the divide cannot migrate
   (design 03).
 - **Slider combinations can reach indefensible slopes.** Each slider is bounded

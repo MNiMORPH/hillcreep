@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `37b851a`.
+claim below against git and disk before trusting it. Current to `0a5a849`.
 
 ## (a) Origin -- why this model exists
 
@@ -35,12 +35,13 @@ already taken in the course (`D` is grain size, `K` is turbulent diffusivity).
 `k_u` is the one invented symbol, resolving a dimensional overload in the
 notes' own `k_hs`. Crosswalk in `README.md`.
 
-1. **Next: aggradation onlap** -- Andy's stated next item. The hook is built
-   (`River` objects, `active` mask, one `apply_boundaries()`) and the algorithm
-   is written down in `design/03` in his words: flood a level set with sediment,
-   set drowned nodes to it, drop them from `active`, and the hillslope becomes
-   genuinely *shorter*. `apply_boundaries()` currently raises
-   `NotImplementedError` rather than misbehaving quietly.
+1. **Aggradation is done** (2026-09-04). Level set, exposed hillslope
+   shortens, buried hillslope remembered and exhumed on re-incision. The first
+   implementation was inert -- it raised buried nodes to the fill, which
+   levitated the toe with the rising bed so nothing ever drowned; the rewrite
+   keeps `z` and the fill separate. See `design/03`.
+
+   **Next** is Andy's to choose. Nothing is blocking.
 2. **One parameter proposal open**: `Z_DISPLAY_IN_HSTAR_MAX` (see (e)). Blocks
    nothing.
 3. Mass wasting, eventually (`design/06`). Two routes sketched; neither

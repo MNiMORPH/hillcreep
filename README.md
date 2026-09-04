@@ -60,6 +60,12 @@ hill = Hillslope(length=100., k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
 hill.run(3.0e5)                       # years
 
 hill.k_hs                             # 0.01 m2/yr  = k_u * dz_u
+hill.equilibrate()                    # impose the steady form directly
+
+hill.incision_rate = -0.05e-3         # rivers aggrade instead
+hill.run(6.0e4)
+hill.exposed_length                   # m of hillslope not yet buried
+hill.surface()                        # visible ground: max(hillslope, fill)
 hill.surface_velocity()               # m/yr at each node, signed
 hill.velocity_field(zeta)             # the field the diffusivity summarises
 ```
@@ -111,10 +117,11 @@ is kept open and written down in `design/05-deferred-bedrock-and-weathering.md`;
 the flux is already computed on cell faces so that `k_hs` can become a function
 of `x` without the solver being rewritten.
 
-Aggrading rivers raise their beds but cannot yet bury the hillslope toe — a
-moving-boundary problem. The structure for it is in place (`River` objects, an
-`active` node mask, one `apply_boundaries()`), and the demo pauses with an
-explanation rather than producing a quietly wrong answer.
+Alluvium does not creep: once buried, ground stops moving entirely, where a
+real valley fill has transport of its own. And no sediment volume is tracked —
+the alluvial surface is a level, which is enough to move the hillslope's
+boundary but means mass is not conserved within the hillslope. It should not
+be: the river delivers material from outside it.
 
 ## Layout
 
