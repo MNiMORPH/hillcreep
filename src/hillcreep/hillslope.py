@@ -1,6 +1,9 @@
-"""A hillslope whose diffusivity is built, not assumed.
+"""A hillslope between two rivers, and what those rivers do to its edges.
 
-The model in one place.  Soil creeps downslope at a rate that decays
+The transport law itself lives in :mod:`hillcreep.creep`, shared with every
+other surface in this package; this module adds only the boundaries.
+
+Soil creeps downslope at a rate that decays
 exponentially below the land-air interface,
 
     u(x, zeta) = u_s(x) * exp(-zeta / dz_u),      u_s(x) = -k_u * dz/dx
@@ -43,6 +46,8 @@ below the surface ``zeta`` is positive down.
 
 import numpy as np
 
+from .creep import CreepingProfile
+
 __all__ = ["River", "Hillslope"]
 
 
@@ -69,7 +74,7 @@ class River(object):
         self.bed -= self.incision_rate * dt
 
 
-class Hillslope(object):
+class Hillslope(CreepingProfile):
     """A symmetric soil-mantled hillslope between two rivers.
 
     Parameters
@@ -95,18 +100,13 @@ class Hillslope(object):
 
     def __init__(self, length=100.0, n_nodes=101, k_u=0.02, dz_u=0.5,
                  incision_rate=0.05e-3, z=None):
-        self.length = float(length)
-        self.x = np.linspace(0.0, self.length, int(n_nodes))
-        self.dx = self.x[1] - self.x[0]
-
-        self.k_u = float(k_u)
-        self.dz_u = float(dz_u)
+        CreepingProfile.__init__(self, length, n_nodes, k_u, dz_u)
 
         self.left = River(bed=0.0, incision_rate=incision_rate)
         self.right = River(bed=0.0, incision_rate=incision_rate)
 
-        self.z = np.zeros(self.x.size) if z is None else np.array(z, dtype=float)
-        self.t = 0.0
+        if z is not None:
+            self.z = np.array(z, dtype=float)
 
         # Which nodes the solver evolves.  Today this is every interior node,
         # and it exists so that aggrading rivers can later bury the toe by
@@ -118,17 +118,6 @@ class Hillslope(object):
         self.apply_boundaries()
 
     # -- what the two sliders add up to ----------------------------------
-
-    @property
-    def k_hs(self):
-        """Hillslope diffusivity ``k_hs = k_u * dz_u`` [m**2/yr].
-
-        Reported, never set.  Landlab's ``DepthDependentDiffuser`` states the
-        same identity, in its own notation (quoted verbatim, so its symbols are
-        left alone): "the commonly used 'hillslope diffusivity' coefficient is
-        equal to the product of K and H*".
-        """
-        return self.k_u * self.dz_u
 
     @property
     def incision_rate(self):
@@ -146,63 +135,6 @@ class Hillslope(object):
         self.apply_boundaries()
 
     # -- the transport law ------------------------------------------------
-
-    def face_slope(self):
-        """Slope ``dz/dx`` on the faces between nodes [-]. Length ``n - 1``."""
-        return np.diff(self.z) / self.dx
-
-    def surface_velocity(self):
-        """Downslope surface creep velocity ``u_s = -k_u dz/dx`` at nodes [m/yr].
-
-        Signed: positive is motion in the +x direction.  Zero at the divide,
-        largest in magnitude at the toes.  Node-aligned with ``x``.
-
-        ``edge_order=2`` is not optional.  numpy's default first-order one-sided
-        difference at the ends is not exact for a quadratic, and biases the toe
-        velocity low by 1% (4.95 against 5.00 mm/yr at the shipped defaults) --
-        at exactly the two nodes where velocity is largest and where the demo
-        draws the eye.  Caught by
-        ``test_steady_surface_velocity_does_not_depend_on_K``.
-        """
-        return -self.k_u * np.gradient(self.z, self.dx, edge_order=2)
-
-    def velocity_field(self, zeta):
-        """``u(x, zeta) = u_s(x) exp(-zeta / dz_u)`` [m/yr].
-
-        Parameters
-        ----------
-        zeta : array_like
-            Depths below the land-air interface [m], positive down.
-
-        Returns
-        -------
-        ndarray, shape ``(zeta.size, x.size)``
-            Row 0 is the surface.  The field is separable, so this is an outer
-            product -- cheap enough to recompute every animation frame.
-        """
-        zeta = np.atleast_1d(np.asarray(zeta, dtype=float))
-        return np.exp(-zeta / self.dz_u)[:, None] * self.surface_velocity()[None, :]
-
-    def q_m(self):
-        """Depth-integrated soil q_m ``q = -k_u dz_u dz/dx`` on faces [m**2/yr].
-
-        Face form, not a node-centred second difference.  With ``k_u`` and
-        ``dz_u`` uniform the two are identical, so this costs nothing now;
-        it is the only form that survives ``D`` becoming a function of ``x``
-        once soil thickness varies.  See design/05.
-        """
-        return -self.k_hs * np.diff(self.z) / self.dx
-
-    # -- time stepping -----------------------------------------------------
-
-    def stable_timestep(self, safety=0.25):
-        """Explicit-diffusion time step ``safety * dx**2 / D`` [yr].
-
-        The stability limit is ``dx**2 / (2 D)``; ``safety = 0.25`` is half of
-        that.  A demo whose sliders change ``D`` while it runs must size the
-        step from the largest ``D`` on offer, not the current one.
-        """
-        return safety * self.dx ** 2 / self.k_hs
 
     def fill_level(self):
         """Elevation of the alluvial surface at each node [m].
@@ -303,12 +235,6 @@ class Hillslope(object):
         self.right.advance(dt)
         self.apply_boundaries()
         self.t += dt
-
-    def run(self, duration, dt=None):
-        """Advance for ``duration`` years in steps of ``dt`` (default stable)."""
-        dt = self.stable_timestep() if dt is None else dt
-        for _ in range(int(round(duration / dt))):
-            self.advance(dt)
 
     # -- what the profile is chasing --------------------------------------
 

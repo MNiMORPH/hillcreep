@@ -7,7 +7,9 @@ consequence.
 """
 
 from ._version import __version__
+from .creep import CreepingProfile
 from .hillslope import Hillslope
 from .hillslope import River
+from .scarp import Scarp
 
-__all__ = ["Hillslope", "River", "__version__"]
+__all__ = ["CreepingProfile", "Hillslope", "River", "Scarp", "__version__"]
