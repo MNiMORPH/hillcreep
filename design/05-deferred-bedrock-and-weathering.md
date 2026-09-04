@@ -1,5 +1,12 @@
 # 05 -- Bedrock and weathering, deferred
 
+## Status: decided, not merely postponed
+
+**Andy's call, confirmed: no bedrock.** This is settled rather than pending, and
+should not be reopened as an oversight. The document stays because the *cost*
+below is real and needs to remain visible, and because the path back must not be
+foreclosed by anything written in the meantime.
+
 ## What is deferred, and why
 
 Bedrock, a finite mobile soil thickness, and soil production are all out of the
@@ -54,10 +61,14 @@ as production minus flux divergence, `z_b` lowers, and `D(x) = K·H_eff(x)`
 becomes spatially variable -- which is why the flux must already be in face
 form.
 
-## The parameter this will force, flagged now
+## The parameter this will force
 
 Converting bedrock to soil conserves mass only with a density ratio
-`rho_r / rho_s` of about 1.5-2. **Proposal:** name the constant from the
-outset and set it to 1.0 while there is no weathering, so that the day it turns
-on, the bookkeeping is already in the right shape rather than being retrofitted
-into a working model.
+`rho_r / rho_s` of about 1.5-2. Andy has confirmed this is needed.
+
+It is **recorded here and deliberately not written into the code yet.** With no
+bedrock there is nothing for it to convert, so a named constant fixed at 1.0
+would be dead code -- a parameter that appears in the source, participates in
+nothing, and reads to anyone else as though the model accounts for a density
+contrast it has never seen. The commitment is that it goes in *with* the first
+line of bedrock, not after the model is already working without it.
