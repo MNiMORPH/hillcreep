@@ -14,7 +14,7 @@ creep velocity at unit slope `k_u`, and the e-folding depth `Δz_u` over which t
 motion decays -- and `D = K H*` is reported back as a consequence.
 
 It grew from Andy's 2013 course script,
-`~/Dropbox/Courses/Computational-Methods-in-Earth-Sciences/code/Numerical/hillslope_diffusion_no_matrix.py`,
+Andy's 2013 course script `hillslope_diffusion_no_matrix.py` (unpublished),
 which solves the same equation with `k_hs` asserted.
 
 Delivery is an interactive browser demo built with
@@ -52,7 +52,8 @@ notes' own `k_hs`. Crosswalk in `README.md`.
    though the model accounts for a density contrast it has never seen.
 5. **The course notes wait**, by Andy's decision (2026-09-04), and the Dropbox
    course directory is *not* to be `git init`-ed -- too messy. The method for
-   that revision, if it comes, is in `docs/course-notes-revision-method.md`;
+   that revision, if it comes, was moved out of this repo when it was published
+   (it is about the notes, not the model) and lives with the course material;
    the errata for the hillslopes chapter was handed to Andy as a file and
    deliberately not filed here, since it is course material.
 6. Not yet done: no git remote, nothing pushed, and the demo is not embedded in

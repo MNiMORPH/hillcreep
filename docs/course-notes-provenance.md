@@ -6,7 +6,7 @@ published independently.
 
 ## The section
 
-`~/Dropbox/Courses/Geomorphology/02-hillslopes/02_03_Hillslopes_2022.tex`,
+Andy Wickert's Geomorphology course notes (unpublished),
 §"Explicit consideration of soils in hillslope transport". Motivated there by
 Roger Hooke's Bevens Creek measurements (segmented wooden rods inserted in 1968
 and excavated 9.5 years later), which show creep concentrated in the upper soil

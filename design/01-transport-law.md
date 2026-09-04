@@ -50,7 +50,7 @@ says "Johnstone and Hilley (2014)" while its reference list says 2015 -- the
 ## A third, closer source: Andy's own course notes
 
 The same law is derived independently in
-`~/Dropbox/Courses/Geomorphology/02-hillslopes/02_03_Hillslopes_2022.tex`,
+Andy's Geomorphology course notes (unpublished),
 §"Explicit consideration of soils in hillslope transport", from Roger Hooke's
 Bevens Creek creep measurements. The notes use `k_hs`, `Δz_u` and `h_m` where
 Johnstone & Hilley use `K`, `H*` and `H`. See
