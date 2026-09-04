@@ -65,6 +65,19 @@ caption has to say so or students will read it as the base of the soil.
   -- a depth axis that moves while a student drags the slider destroys exactly
   the comparison the panel exists to support, and a fixed axis makes "the
   moving layer reaches deeper" directly visible.
-- **Colour scale fixed to ±`u_s` at the steepest point of the current state**,
-  rather than renormalised per frame. *A proposal.* Renormalising makes the
-  colours meaningless across time.
+- **Colour scale fixed to ±`E L / (2 H*)`**, the *steady* surface velocity at
+  the toe. *A proposal.* This depends only on the sliders, so it does not
+  flicker frame to frame, and the colours saturate as the hill approaches its
+  steady form -- a useful signal in itself. When `E = 0` there is no steady
+  velocity to scale by and the present profile is used instead.
+
+  (As first written this bullet said "fixed to the steepest point of the
+  current state, rather than renormalised per frame", which is a
+  contradiction: the current state *is* the frame. Corrected when the app was
+  implemented against it.)
+
+- **Elevation axis tracks the steady crest** `E L² / (8 D)` for the current
+  sliders, at 1.18×. *A proposal.* A fixed axis cannot serve these sliders:
+  the steady crest spans 1.25 m to 50 m over their ranges, a factor of 40, so
+  any one choice either clips the tall cases or draws the short ones as a flat
+  line. Found by rendering the app, not by reasoning about it.
