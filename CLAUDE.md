@@ -26,6 +26,12 @@ These are assumed silently by every routine, so an unstated one becomes a bug
 that looks like a result. Change one only deliberately, and grep for what
 depends on it.
 
+- **Notation is the course notes' system**, not any one paper's: `k_hs`,
+  `k_u`, `Δz_u`, `q_m`, and the deferred `h_m`, `z_r`, `w_0`, `δz_w`, `ρ_m/ρ_r`.
+  `k_u` is the only new symbol — the notes' `k_hs` doubles for both the
+  `[L²/T]` diffusivity and the `[L/T]` velocity coefficient, and code cannot
+  carry that. Never import `D` or `K` from the literature: in this course `D`
+  is grain size and `K` is turbulent diffusivity. Crosswalk in `README.md`.
 - **Units**: metres and **years**. Not seconds — hillslope diffusivity is quoted
   in m²/yr everywhere in this literature, and the course scripts this grew from
   use years. Millimetres per year appear only at the slider and label edges, and
@@ -35,17 +41,18 @@ depends on it.
 - **`zeta` is depth below the land–air interface, positive down.** It is a
   *surface-following* coordinate: the interface moves as the hill erodes, so
   `zeta` is not a depth from any fixed datum. Deshpande et al. (2021) call this
-  `z`; renaming it is deliberate and is the convention most likely to bite.
-- **`K` is not the surface velocity.** `K` is the surface creep velocity at
-  *unit slope* [m/yr]; the actual surface velocity `u_s = K·S(x)` varies along
+  `z` and the course notes express it as `(z′ − z)`; naming it is deliberate and
+  is the convention most likely to bite.
+- **`k_u` is not the surface velocity.** `k_u` is the surface creep velocity at
+  *unit slope* [m/yr]; the actual surface velocity `u_s = k_u·S(x)` varies along
   the hill and is a diagnostic, not a parameter.
-- **`D` is a read-only property.** If anything ever assigns a diffusivity, the
+- **`k_hs` is a read-only property.** If anything ever assigns a diffusivity, the
   model has lost its reason to exist.
-- **`E` is positive for incision**, matching `zdot_channel` in the 2013 course
+- **`ε̇` is positive for incision**, matching `zdot_channel` in the 2013 course
   script. Negative aggrades.
-- **Flux lives on faces; elevation lives on nodes.** With `K` and `H*` uniform
+- **Flux lives on faces; elevation lives on nodes.** With `k_u` and `Δz_u` uniform
   the face form is identical to the node-centred second difference, so it costs
-  nothing today. It is the only form that survives `D` becoming a function of
+  nothing today. It is the only form that survives `k_hs` becoming a function of
   `x` when soil thickness arrives, and `test_face_form_flux_matches_the_
   constant_diffusivity_stencil` is what lets that be claimed for free.
 - **`np.gradient` needs `edge_order=2`.** The default first-order one-sided

@@ -65,56 +65,103 @@ Bedrock, a finite soil thickness `H`, and weathering are all deferred (design
 saturation factor entirely:
 
 ```
-u(x, zeta) = K * S(x) * exp(-zeta / H_star)        [m/yr]
-q(x)       = integral_0^inf u dzeta = K * H_star * S(x)   [m2/yr]
-D          = K * H_star                             [m2/yr]   exactly
+u(x, zeta) = k_u * S(x) * exp(-zeta / dz_u)              [m/yr]
+q_m(x)     = integral_0^inf u dzeta = k_u * dz_u * S(x)  [m2/yr]
+k_hs       = k_u * dz_u                                  [m2/yr]   exactly
 ```
 
 This is the cleanest possible statement of the idea: **two sliders whose
 product is the diffusivity, with nothing in between them.** The cost is real
 and stated here so it stays visible: without a soil thickness the model cannot
-show the saturation that makes `H*` interesting to a geomorphologist -- that
-once `H*` exceeds the soil thickness, deepening the mobile zone stops raising
-`D` because there is no more soil to move. That is the first thing design 05
+show the saturation that makes `Δz_u` interesting to a geomorphologist -- that
+once `Δz_u` exceeds the soil thickness, deepening the mobile zone stops raising
+`k_hs` because there is no more soil to move. That is the first thing design 05
 buys back.
 
-Verified by `probe_c`: `int(u dzeta)` matches `K H_star S` to 6e-15 relative.
+Verified by `probe_c`: `int(u dzeta)` matches `k_u dz_u S` to 6e-15 relative.
 
-## Notation
+## Notation: the course notes' system, not any one paper's
 
-`z` keeps its usual meaning -- elevation, positive up -- as in Landlab and in
-Andy's own course scripts. Deshpande et al.'s depth-below-surface `z` is
-therefore renamed `zeta`. It is a **surface-following** coordinate: depth below
-the land-air interface, which is itself moving downward as the hill erodes, not
-a depth from any fixed datum.
+The literature offers no single convention to defer to. One law, three papers,
+three notations: Deshpande et al. write `λ` and `u_0`; Johnstone & Hilley and
+Landlab write `H*` and `K`; Heimsath et al. write `K_h` and `H`. "Use the
+literature name" does not name a choice here.
 
-| symbol | meaning | units | source |
-|---|---|---|---|
-| `x` | horizontal distance | m | |
-| `z` | surface elevation, positive up | m | Landlab `topographic__elevation` |
-| `zeta` | depth below the land-air interface, positive down | m | Deshpande et al.'s `z` |
-| `S` | slope, `dz/dx` | - | |
-| `K` | soil transport velocity coefficient | m/yr | Landlab `soil_transport_velocity`; Heimsath et al. `K_h` |
-| `H_star` | creep e-folding depth | m | Landlab `soil_transport_decay_depth`; Deshpande et al. `lambda` |
-| `u_s` | surface creep velocity, `K*S` | m/yr | Deshpande et al. `u_0` |
-| `u` | `u(x, zeta) = u_s(x) * exp(-zeta/H_star)` | m/yr | |
-| `q` | depth-integrated flux, `K*H_star*S` | m²/yr | Landlab `soil__flux` |
-| `D` | hillslope diffusivity, `K*H_star` | m²/yr | **displayed, never set** |
-| `E` | river incision rate, positive = incising | m/yr | Andy's `zdot_channel` |
+Worse, the obvious literature symbols are **already taken elsewhere in Andy's
+course**, verified by grepping all 33 `.tex` files:
 
-Three deliberate departures, each with a reason:
+- **`D` is grain size** — `D_50`, `D_84`, `D_90` throughout the sediment-
+  transport material. `05_Flow` even asks students to "find the dimensions of
+  `$K$` and `$D$`."
+- **A bare `$K$` is turbulent diffusivity** (26 occurrences in open-channel
+  flow, replacing `μ` in the turbulent rheology). Importing Landlab's `K` — a
+  *velocity* coefficient — would collide head-on with a chapter where `K` is
+  already a diffusivity. That is the worst kind of collision, because both
+  readings are plausible.
 
-- **`u_s`, not Deshpande's `u_0`.** In a time-stepping model `u_0` reads as
-  "value at t = 0".
-- **`H_star`, not `lambda`.** `lambda` is a Python keyword, Landlab and
-  Johnstone & Hilley use `H*`, and it pairs with `w_star` when weathering
-  arrives.
-- **`zeta`, not `z`.** See above. This is the convention most likely to bite.
+So the model uses the course notation. The rule applied, and worth stating
+because it will recur: **defer to the literature where it is unanimous and
+uncollided; use the course system otherwise, and record the reason.**
+
+### `k_u`, the one new symbol
+
+The notes' `k_hs` does double duty — `[L²/T]` in their Eq. `q_m`, `[L/T]` in
+their Eq. `q_m_RLBH`, where it multiplies `Δz_u` (see
+`docs/course-notes-provenance.md`). Code cannot carry that ambiguity, so the
+velocity coefficient gets its own name. `k_u` pairs with `Δz_u` — both
+subscripted for the velocity profile they describe — and it fits the notes'
+existing `k_x` family (`k_a`, `k_b`, `k_s`, `k_S`, `k_ω`, `k_{ε̇}`) without
+colliding with any of them. It makes the model's whole lesson readable:
+
+```
+k_hs = k_u * Δz_u
+```
+
+which is invisible in `D = K H*`.
+
+### The symbols
+
+| symbol | meaning | units |
+|---|---|---|
+| `x` | horizontal distance | m |
+| `z` | surface elevation, positive up | m |
+| `zeta` | depth below the land-air interface, positive down | m |
+| `S` | slope, `dz/dx` | - |
+| `k_u` | surface creep velocity at unit slope | m/yr |
+| `dz_u` | creep e-folding depth (`Δz_u`) | m |
+| `u_s` | surface creep velocity, `k_u S` | m/yr |
+| `u` | `u(x, zeta) = u_s(x) exp(-zeta/dz_u)` | m/yr |
+| `q_m` | depth-integrated flux of mobile material, `k_u dz_u S` | m²/yr |
+| `k_hs` | hillslope diffusivity, `k_u dz_u` | m²/yr |
+| `incision_rate` | river incision (`ε̇`), positive = incising | m/yr |
+
+`zeta` is the one departure from the notes, which express the same thing as
+`(z′ − z)` with `z′` the elevation of a soil parcel. Andy settled on a named
+depth for this model: it is depth below the land-air interface, and that
+interface is itself moving as the hill erodes, so it is a *surface-following*
+coordinate and not a depth from any fixed datum. This is the convention most
+likely to bite.
+
+### Crosswalk
+
+| this model | course notes | Johnstone & Hilley / Landlab | Deshpande et al. | Heimsath et al. |
+|---|---|---|---|---|
+| `k_hs` hillslope diffusivity [m²/yr] | `k_hs` | `K·H*` / `linear_diffusivity` | – | linear diffusivity |
+| `k_u` surface velocity at unit slope [m/yr] | `k_hs`, overloaded | `K` / `soil_transport_velocity` | – | `K_h` |
+| `dz_u` creep e-folding depth [m] | `Δz_u` | `H*` / `soil_transport_decay_depth` | `λ` | – |
+| `q_m` depth-integrated flux [m²/yr] | `q_m` | `q_s` / `soil__flux` | – | `H q̄_s` |
+| `u_s` surface creep velocity [m/yr] | `u` at the surface | – | `u₀` | – |
+| `zeta` depth below the surface [m] | `−(z′ − z)` | – | `z` | – |
+| `incision_rate` [m/yr] | `ε̇` | – | – | – |
+| *deferred:* soil thickness | `h_m` | `H` / `soil__depth` | – | `H` |
+| *deferred:* rock surface | `z_r` | `bedrock__elevation` | – | – |
+| *deferred:* weathering | `w_0`, `δz_w`, `ρ_m/ρ_r` | `soil_production_*` | – | `ε(H)` |
+
 
 ## The distinction that matters most in the code
 
-`K` is *not* the surface velocity. `u_s = K * S(x)` varies along the hill --
-zero at the divide, largest at the toe. `K` is the surface velocity **at unit
+`k_u` is *not* the surface velocity. `u_s = k_u * S(x)` varies along the hill
+-- zero at the divide, largest at the toe. `k_u` is the surface velocity **at unit
 slope**, and it is the slider; `u_s` is a diagnostic, and it is what the
 velocity panel draws.
 

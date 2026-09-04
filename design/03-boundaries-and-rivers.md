@@ -8,7 +8,7 @@ hillslope -- can be added later without rewriting the boundary handling?
 
 ## What ships now
 
-Both rivers lower (or raise) their beds at a single prescribed rate `E`,
+Both rivers lower (or raise) their beds at a single prescribed rate `ε̇`,
 positive for incision, matching the sign of Andy's 2013 `zdot_channel`. The two
 sides are symmetric, which keeps the divide at the centre and keeps the steady
 parabola valid as a live check curve:
@@ -77,8 +77,8 @@ turns out to matter less than the divide migration.
 
 ## Parameters chosen here
 
-- **`E` slider range: -0.05 to +0.10 mm/yr, default 0.05.** *A proposal.* The
+- **`ε̇` slider range: -0.05 to +0.10 mm/yr, default 0.05.** *A proposal.* The
   upper bound is set by steepness: `probe_a` shows `E = 0.2 mm/yr` at the
-  default `K` and `H*` gives a steady toe slope of 1.0 (45°), far outside where
+  default `k_u` and `Δz_u` gives a steady toe slope of 1.0 (45°), far outside where
   a linear creep law is defensible. At `E = 0.10` the toe slope is 0.50
   (26.6°). The negative end is arbitrary pending the onlap code.

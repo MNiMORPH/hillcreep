@@ -29,7 +29,7 @@ is zero, fading downward as the exponential decays. Direction and magnitude in
 one mark, and no vertical exaggeration to explain because the lower panel is
 not a picture of space -- it is a picture of depth below a moving surface.
 
-The field is separable, `u(x, zeta) = u_s(x) · exp(-zeta/H_star)`, so a frame
+The field is separable, `u(x, zeta) = u_s(x) · exp(-zeta/Δz_u)`, so a frame
 costs one outer product. `probe_c` measured the whole step at 1.3 ms/frame in
 CPython at `STEPS_PER_FRAME = 400`, well inside a 33 ms frame budget even
 allowing for Pyodide being several times slower.
@@ -65,11 +65,11 @@ caption has to say so or students will read it as the base of the soil.
   being right the moment the model is rescaled. The rule differs between the
   two renderings, for a reason:
 
-  - **The static figure** has a single `H*`, so it follows that `H*` directly:
+  - **The static figure** has a single `Δz_u`, so it follows that `Δz_u` directly:
     `ZETA_EFOLDINGS = 4.0`, i.e. `Z_DISPLAY = 4 H*`. The panel then looks the
     same at every scale and always shows `1 - e^-4 = 98.2%` of the flux.
   - **The interactive demo** cannot do that: an axis derived from the *current*
-    `H*` would move while a student drags the slider, destroying exactly the
+    `Δz_u` would move while a student drags the slider, destroying exactly the
     comparison the panel exists to support. It uses the slider's upper bound
     instead, `Z_DISPLAY = Z_DISPLAY_IN_HSTAR_MAX * HS_MAX`, which still follows
     a rescaled model but never moves during use.

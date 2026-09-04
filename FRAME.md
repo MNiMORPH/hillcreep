@@ -7,15 +7,15 @@ claim below against git and disk before trusting it. Current to `2e2f3e6`.
 ## (a) Origin -- why this model exists
 
 To teach one idea: **hillslope diffusivity is not a property of a hillslope, it
-is a shorthand for motion you could go and measure.** `D` is fitted to
+is a shorthand for motion you could go and measure.** `k_hs` is fitted to
 topography and quoted in m²/yr, and almost never connected to anything a person
 could watch happen. Here a student sets two measurable quantities -- the surface
-creep velocity at unit slope `K`, and the e-folding depth `H*` over which that
+creep velocity at unit slope `k_u`, and the e-folding depth `Δz_u` over which that
 motion decays -- and `D = K H*` is reported back as a consequence.
 
 It grew from Andy's 2013 course script,
 `~/Dropbox/Courses/Computational-Methods-in-Earth-Sciences/code/Numerical/hillslope_diffusion_no_matrix.py`,
-which solves the same equation with `D` asserted.
+which solves the same equation with `k_hs` asserted.
 
 Delivery is an interactive browser demo built with
 [artesian](https://github.com/MNiMORPH/artesian), which constrains the model: it
@@ -41,7 +41,7 @@ eventual answer rather than a guard rail (`design/06`).
 3. Mass wasting, eventually (`design/06`). Two routes sketched; neither
    scheduled. This is what the steep corner of the slider space is waiting for.
 4. Bedrock and weathering remain *available* but decided against for now
-   (`design/05`). `rho_r/rho_s` goes in with the first line of bedrock, not
+   (`design/05`). `ρ_m/ρ_r` goes in with the first line of bedrock, not
    before -- a constant fixed at 1.0 that participates in nothing would read as
    though the model accounts for a density contrast it has never seen.
 5. Not yet done: no git remote, nothing pushed, no `docs/`, and the demo is not
@@ -55,9 +55,9 @@ Branch `master`, HEAD `b78e87b`, **everything unpushed** (there is no remote).
 on this machine.
 
 - `src/hillcreep/hillslope.py` -- **the model**. `Hillslope` and `River`.
-  `Hillslope.diffusivity` is a read-only property returning `K * H_star`.
+  `Hillslope.k_hs` is a read-only property returning `k_u * dz_u`.
 - `interactive_demo/hillcreep_panel.py` -- the artesian demo. Two stacked
-  bokeh panels sharing an x-axis; sliders `K`, `H*`, `E`.
+  bokeh panels sharing an x-axis; sliders `k_u`, `Δz_u`, `ε̇`.
 - `examples/figure_two_panel.py` -- the same figure in matplotlib,
   parameterised: `--K --H-star --E --length --kyr --out`.
 - `prototypes/probe_[a-c]_*.py` -- the evidence behind every quoted number.
@@ -124,7 +124,7 @@ on this machine.
 3. **Colour scale** fixed to the steady toe velocity `E L / (2 H*)`; **elevation
    axis** to 1.18× the steady crest. Both depend only on the sliders, so neither
    rescales frame to frame.
-4. **`rho_r/rho_s` is not named anywhere, deliberately.** Confirmed as needed;
+4. **`ρ_m/ρ_r` is not named anywhere, deliberately.** Confirmed as needed;
    goes in with the first line of bedrock rather than sitting at 1.0 in the
    meantime (`design/05`).
 
@@ -132,6 +132,6 @@ on this machine.
 
 - Nothing has been pushed, tagged, or released, and there is no remote. Every
   one of those needs explicit authorisation in the message that asks for it.
-- `D` must never become assignable.
+- `k_hs` must never become assignable.
 - Every number in prose is pasted probe output. If a number cannot be traced to
   a probe or a cited paper, it does not go in.

@@ -56,8 +56,23 @@ Found while reading the notes for this model, verified numerically in
 2. **`k_hs` carrying two dimensions.** In the notes' Eq. `q_m` it is `[L²/T]`;
    in Eq. `q_m_RLBH` it multiplies `Δz_u` and so must be `[L/T]`. These are
    genuinely two different coefficients, which is why Landlab names the second
-   `soil_transport_velocity`. This model keeps them apart with two names and
-   never lets one stand for the other.
+   `soil_transport_velocity`.
+
+   **This model resolves it by introducing `k_u`** for the `[L/T]` coefficient,
+   leaving `k_hs` as the diffusivity it is defined to be in the notes' Eq.
+   `q_m`. `k_u` pairs with `Δz_u` — both subscripted for the velocity profile
+   they describe — fits the notes' existing `k_x` family (`k_a`, `k_b`, `k_s`,
+   `k_S`, `k_ω`, `k_{ε̇}`) without colliding with any of them, and makes
+
+   ```
+   k_hs = k_u * Δz_u
+   ```
+
+   read as the result it is. `k_u` is a proposal *for the notes*, arrived at by
+   writing the model: code cannot let one name carry two dimensions, so the
+   overload surfaced within minutes of implementation after sitting unnoticed
+   in the TeX. That is an argument for settling notation against runnable
+   models rather than on the page alone.
 
 (A third error, in the Mohr–Coulomb mass-wasting section — an effective normal
 stress omitting grain buoyancy, making saturated slopes a factor
