@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `2e2f3e6`.
+claim below against git and disk before trusting it. Current to `37b851a`.
 
 ## (a) Origin -- why this model exists
 
@@ -28,7 +28,12 @@ see `examples/browser_running.png`.
 
 **Settled, do not reopen as oversights:** no bedrock (`design/05`); steep
 slider combinations left unclamped and unwarned, with mass wasting as the
-eventual answer rather than a guard rail (`design/06`).
+eventual answer rather than a guard rail (`design/06`); and **notation follows
+Andy's course notes, not the literature** (`design/01`) -- because the
+literature has three notations for this one law and its obvious symbols are
+already taken in the course (`D` is grain size, `K` is turbulent diffusivity).
+`k_u` is the one invented symbol, resolving a dimensional overload in the
+notes' own `k_hs`. Crosswalk in `README.md`.
 
 1. **Next: aggradation onlap** -- Andy's stated next item. The hook is built
    (`River` objects, `active` mask, one `apply_boundaries()`) and the algorithm
@@ -44,8 +49,13 @@ eventual answer rather than a guard rail (`design/06`).
    (`design/05`). `ρ_m/ρ_r` goes in with the first line of bedrock, not
    before -- a constant fixed at 1.0 that participates in nothing would read as
    though the model accounts for a density contrast it has never seen.
-5. Not yet done: no git remote, nothing pushed, no `docs/`, and the demo is not
-   embedded in any course page.
+5. **The course notes wait**, by Andy's decision (2026-09-04), and the Dropbox
+   course directory is *not* to be `git init`-ed -- too messy. The method for
+   that revision, if it comes, is in `docs/course-notes-revision-method.md`;
+   the errata for the hillslopes chapter was handed to Andy as a file and
+   deliberately not filed here, since it is course material.
+6. Not yet done: no git remote, nothing pushed, and the demo is not embedded in
+   any course page.
 
 ## (c) Key current data and objects
 
