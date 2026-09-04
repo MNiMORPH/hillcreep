@@ -37,10 +37,34 @@ goes in now, and only the branch is left empty:
 - `apply_boundaries()` is the single place that reads the rivers and writes
   elevations, with the onlap branch present and raising `NotImplementedError`.
 
-When onlap is implemented it becomes: find where `z < z_river`, set those nodes
-to `z_river`, and drop them from `active`. Nothing else should need to change.
-That claim is what the structure is for, and it is worth testing when the time
-comes.
+### The algorithm, in Andy's words
+
+> just flood a level set with sediment, which then really does affect the
+> downslope boundary of the hillslope
+
+That is the whole thing, and it is simpler than "moving boundary" makes it
+sound. The alluvial surface is a **level set**: one elevation `z_river`, flat
+across the valley. Flooding it means
+
+1. raise `z_river` at the prescribed rate;
+2. find every node with `z < z_river` -- the toe the sediment has drowned;
+3. set those nodes to `z_river` and drop them from `active`;
+4. the hillslope's boundary is now the shallowest still-active node, and the
+   hillslope is *shorter*.
+
+Step 4 is the part that matters and the reason this is not cosmetic: burying
+the toe shortens the hillslope, which shortens the distance over which the
+divide has to shed its material, which changes the whole profile. It is a real
+coupling, not a paint job on the bottom of the figure.
+
+Two questions this will raise, recorded now so they are not rediscovered:
+whether a node re-emerges when `z_river` falls again (it should, by the same
+test in reverse), and whether the deposited sediment is tracked as a volume or
+merely as a level (the level alone is enough to move the boundary, and is what
+the quote describes).
+
+Nothing outside `apply_boundaries()` should need to change. That claim is what
+the structure is for, and it is worth testing when the time comes.
 
 ## Rejected: independent left and right rates
 
