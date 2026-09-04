@@ -43,7 +43,7 @@ N_NODES = 101
 # slope of 1.0 (45 degrees), well outside where a linear creep law is
 # defensible.  See design/03.
 KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02          # [m/yr] at unit slope
-DZU_MIN, DZU_MAX, DZU0 = 0.05, 0.40, 0.10         # [m]
+DZU_MIN, DZU_MAX, DZU0 = 0.03, 0.20, 0.10         # [m]
 E_MIN, E_MAX, E0 = -0.010, 0.020, 0.010         # [mm/yr], positive = incising
 
 #: How deep the velocity panel reaches, as a multiple of the *largest* H* the
@@ -54,9 +54,7 @@ E_MIN, E_MAX, E0 = -0.010, 0.020, 0.010         # [mm/yr], positive = incising
 #: the comparison the panel exists to support.
 #:
 #: At 1.0 the deepest setting fills the panel and shows 63.2% of the flux,
-#: while the default H* = 0.5 m keeps its motion in the top quarter.  At 1.5
-#: the deepest setting shows 77.7% and the default is squeezed into the top
-#: sixth.  One constant, and it is a proposal either way.  See design/04.
+#: while the default 0.10 m keeps its motion in the top half.  See design/04.
 Z_DISPLAY_IN_DZU_MAX = 1.0
 
 #: Depth shown in the velocity panel [m].  A viewing choice, not the base of
@@ -73,7 +71,7 @@ DT = 0.25 * DX ** 2 / (KU_MAX * DZU_MAX)       # 2.5 yr
 # probe_c, measured: 400 steps per frame reaches 95% of the steady crest in
 # 307 frames (10.2 s at 30 fps) at the defaults, 1228 frames (40.9 s) at the
 # slowest corner of the sliders, and 31 frames (1.0 s) at the fastest.
-STEPS_PER_FRAME = 400
+STEPS_PER_FRAME = 200
 
 zeta = np.linspace(0.0, Z_DISPLAY, N_ZETA)
 

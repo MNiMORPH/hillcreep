@@ -34,7 +34,7 @@ HEIGHT = 5.0                    # scarp height, crest to toe [m]
 ANGLE = 30.0                    # initial face angle [degrees]
 
 KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02       # [m/yr] at unit slope
-DZU_MIN, DZU_MAX, DZU0 = 0.05, 0.40, 0.10      # [m]
+DZU_MIN, DZU_MAX, DZU0 = 0.03, 0.20, 0.10      # [m]
 
 #: Depth reached by the velocity panel, as a multiple of the largest e-folding
 #: depth the slider offers. Derived from the model's own depth scale rather
@@ -52,7 +52,7 @@ DT = 0.25 * DX ** 2 / (KU_MAX * DZU_MAX)     # 2.5 yr
 #: Measured: at the default settings this reaches a morphologic age of 200 m2
 #: -- by which point a 30 degree face has relaxed to about 6 degrees -- in
 #: roughly 320 frames, about 11 s at 30 fps.
-STEPS_PER_FRAME = 25
+STEPS_PER_FRAME = 12
 
 zeta = np.linspace(0.0, Z_DISPLAY, N_ZETA)
 

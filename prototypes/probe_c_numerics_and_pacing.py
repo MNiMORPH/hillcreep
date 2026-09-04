@@ -19,15 +19,15 @@ import numpy as np
 L, NX = 100., 101
 DX = L / (NX - 1)
 KU_MIN, KU_MAX, KU0 = 0.01, 0.05, 0.02       # [m/yr]
-DZU_MIN, DZU_MAX, DZU0 = 0.05, 0.40, 0.10      # [m]
+DZU_MIN, DZU_MAX, DZU0 = 0.03, 0.20, 0.10      # [m]
 E0 = 0.01e-3                              # [m/yr]
 
 print("(1) Flux captured above a truncation depth Z_DISPLAY, as a fraction of")
 print("    the full integral k_u*dz_u*S.  Fraction = 1 - exp(-Z/dz_u).")
-for Z in (1.0, 2.0, 3.0, 5.0):
+for Z in (0.10, 0.20, 0.40, 0.60):
     print("    Z_DISPLAY=%.1f m:" % Z, "  ".join(
         "H*=%.2f -> %5.1f%%" % (dzu, 100. * (1. - np.exp(-Z / dzu)))
-        for dzu in (DZU_MIN, DZU0, 1.0, DZU_MAX)))
+        for dzu in (DZU_MIN, DZU0, 0.15, DZU_MAX)))
 
 print()
 print("(2) Stability.  D_max = K_max * H*_max = %.3f m2/yr" % (KU_MAX * DZU_MAX))

@@ -42,7 +42,7 @@ Run out over the sliders (`probe_a`), that is:
 | slider moved | `k_hs` | steady crest | surface velocity |
 |---|---|---|---|
 | `k_u`: 0.01 → 0.05 m/yr | 0.001 → 0.005 | 12.5 → 2.5 m | **5.00 mm/yr throughout** |
-| `Δz_u`: 0.05 → 0.40 m | 0.001 → 0.008 | 12.5 → 1.56 m | 10.0 → 1.25 mm/yr |
+| `Δz_u`: 0.03 → 0.20 m | 0.0006 → 0.004 | 20.8 → 3.13 m | 16.7 → 2.5 mm/yr |
 
 So the two knobs are *not* interchangeable even though their product is all
 that `k_hs` sees. `k_u` sets **how steep the hill has to be** to carry the flux;

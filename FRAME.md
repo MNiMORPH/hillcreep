@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `0a5a849`.
+claim below against git and disk before trusting it. Current to `e49e096`.
 
 ## (a) Origin -- why this model exists
 
@@ -42,7 +42,7 @@ notes' own `k_hs`. Crosswalk in `README.md`.
    keeps `z` and the fill separate. See `design/03`.
 
    **Next** is Andy's to choose. Nothing is blocking.
-2. **One parameter proposal open**: `Z_DISPLAY_IN_HSTAR_MAX` (see (e)). Blocks
+2. **One parameter proposal open**: `Z_DISPLAY_IN_DZU_MAX` (see (e)). Blocks
    nothing.
 3. Mass wasting, eventually (`design/06`). Two routes sketched; neither
    scheduled. This is what the steep corner of the slider space is waiting for.
@@ -124,15 +124,15 @@ on this machine.
 
 ## (e) Parameters chosen but not asked for -- proposals, still open
 
-1. **`Z_DISPLAY_IN_HSTAR_MAX = 1.0`** in the demo, so the velocity panel reaches
-   `1.0 × H*_max = 2.0 m`. Andy settled the *principle* -- the depth must be
+1. **`Z_DISPLAY_IN_DZU_MAX = 1.0`** in the demo, so the velocity panel reaches
+   `1.0 × Δz_u_max = 0.20 m`. Andy settled the *principle* -- the depth must be
    derived from the model's scale, not a hand-picked number in metres -- and
    this multiplier is what remains to taste. At 1.0 the deepest slider setting
    fills the panel and shows 63.2% of the flux while the default keeps its
-   motion in the top quarter; at 1.5 the deepest shows 77.7% and the default is
-   squeezed into the top sixth. The static figure uses a different rule for a
+   motion in the top half. The multiplier was never the problem: the bound
+   was, at 0.40 m -- deeper than any e-folding depth Hooke measured. The static figure uses a different rule for a
    stated reason (`design/04`).
-2. **Slider ranges** `k_u ∈ [0.01, 0.05]`, `Δz_u ∈ [0.05, 0.40]`, `ε̇ ∈ [-0.010, 0.020]`
+2. **Slider ranges** `k_u ∈ [0.01, 0.05]`, `Δz_u ∈ [0.03, 0.20]`, `ε̇ ∈ [-0.010, 0.020]`
    mm/yr, bounded above by steepness. **Known issue, accepted by Andy:** the
    ranges can still be *combined* into indefensible states -- `E = 0.10` with
    `H* = 0.25` gives a 45° toe slope -- and nothing clamps or warns, because

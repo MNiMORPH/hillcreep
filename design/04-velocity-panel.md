@@ -71,14 +71,23 @@ caption has to say so or students will read it as the base of the soil.
   - **The interactive demo** cannot do that: an axis derived from the *current*
     `Δz_u` would move while a student drags the slider, destroying exactly the
     comparison the panel exists to support. It uses the slider's upper bound
-    instead, `Z_DISPLAY = Z_DISPLAY_IN_HSTAR_MAX * HS_MAX`, which still follows
+    instead, `Z_DISPLAY = Z_DISPLAY_IN_DZU_MAX * DZU_MAX`, which still follows
     a rescaled model but never moves during use.
 
-  `Z_DISPLAY_IN_HSTAR_MAX = 1.0` is *a proposal*, and the one number left to
-  taste. At 1.0 the deepest slider setting fills the panel and shows 63.2% of
-  the flux while the default `Δz_u = 0.10 m` keeps its motion in the top quarter;
-  at 1.5 the deepest shows 77.7% and the default is squeezed into the top
-  sixth. Flux fractions from `probe_c`.
+  `Z_DISPLAY_IN_DZU_MAX = 1.0` is *a proposal*. At 1.0 the deepest slider
+  setting fills the panel and shows 63.2% of the flux, while the default
+  `Δz_u = 0.10 m` keeps its motion in the top half. Flux fractions from
+  `probe_c`.
+
+  **The multiplier was never the problem; the bound was.** While `Δz_u` ran to
+  0.40 m the same rule gave a 0.40 m panel and squeezed the default into the
+  top quarter -- because 0.40 m is deeper than any e-folding depth Hooke
+  measured, and 0.40 m of e-folding in a 0.42 m soil is very nearly uniform
+  motion, which none of his stations show. Bounding `Δz_u` at 0.20 m, the
+  deepest his profiles do show, fixed the physics and the picture together.
+  Andy asked whether the axis suited the thinner layer; it did, in proportion,
+  and the range feeding it did not.
+
 - **Colour scale fixed to ±`E L / (2 H*)`**, the *steady* surface velocity at
   the toe. *A proposal.* This depends only on the sliders, so it does not
   flicker frame to frame, and the colours saturate as the hill approaches its
