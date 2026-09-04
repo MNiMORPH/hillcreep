@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hillcreep"
+dynamic = ["version"]
+description = "Hillslope diffusivity built from a measured soil-creep velocity profile, not assumed"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "GPL-3.0-or-later"
+license-files = ["LICEN[CS]E*"]
+authors = [{ name = "Andrew D. Wickert", email = "awickert@umn.edu" }]
+keywords = [
+  "earth science",
+  "geomorphology",
+  "hillslope",
+  "soil creep",
+  "sediment transport",
+  "landscape evolution",
+  "numerical modeling",
+  "teaching",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Education",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+  "numpy",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+# The interactive demo only.  The model itself needs numpy alone, which
+# Pyodide bundles -- to be confirmed with `artesian check numpy`.
+demo = ["panel>=1.4", "bokeh"]
+
+# src-layout: the single ``hillcreep`` package lives under src/.
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["hillcreep*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "hillcreep._version.__version__" }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[project.urls]
+Repository = "https://github.com/MNiMORPH/hillcreep"
+Issues = "https://github.com/MNiMORPH/hillcreep/issues"
