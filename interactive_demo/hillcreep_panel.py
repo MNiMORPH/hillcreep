@@ -24,8 +24,16 @@ from hillcreep import Hillslope
 pn.extension()
 
 #: The width this app is laid out for.  ``artesian build`` reads this constant
-#: out of the source and records it in the compiled page.
-DESIGN_WIDTH = 700
+#: out of the source and records it in the compiled page; the embedding page
+#: repeats it as ``data-design-width`` (see the GeomorphOnline exercise page for
+#: why both are needed).  900 matches the other exercises on that site.
+DESIGN_WIDTH = 900
+
+#: Sliders stop here rather than spanning the pane.  The bound is in *layout*
+#: pixels, so the embed's scaling still enlarges them: a bounded slider is not
+#: a small slider on a large display.  Wider than corestone's because these
+#: labels carry a symbol and a unit.
+SLIDER_WIDTH = 420
 
 LENGTH = 100.0                  # hillslope width [m]
 N_NODES = 101
@@ -97,12 +105,15 @@ sim = {"hill": Hillslope(length=LENGTH, n_nodes=N_NODES, k_u=KU0, dz_u=DZU0,
                          incision_rate=E0 * 1e-3)}
 
 k_u = pn.widgets.FloatSlider(
+    sizing_mode="stretch_width", max_width=SLIDER_WIDTH,
     name="Surface creep velocity at unit slope  k_u  [m/yr]",
     start=KU_MIN, end=KU_MAX, step=0.005, value=KU0, format="0.000")
 dz_u = pn.widgets.FloatSlider(
+    sizing_mode="stretch_width", max_width=SLIDER_WIDTH,
     name="Creep e-folding depth  \u0394z_u  [m]",
     start=DZU_MIN, end=DZU_MAX, step=0.05, value=DZU0, format="0.00")
 E = pn.widgets.FloatSlider(
+    sizing_mode="stretch_width", max_width=SLIDER_WIDTH,
     name="River incision rate  \u03b5\u0307  [mm/yr]   (negative = aggrading)",
     start=E_MIN, end=E_MAX, step=0.01, value=E0, format="0.00")
 
@@ -199,7 +210,7 @@ velocity = ColumnDataSource(data={"u": [hill0.velocity_field(zeta) * 1e3]})
 # divide where the velocity passes through zero.
 mapper = LinearColorMapper(palette=_smooth_palette(RdBu11), low=-1.0, high=1.0)
 
-fig_z = figure(height=250, width=680, title="",
+fig_z = figure(height=320, width=880, title="",
                y_axis_label="Elevation above\nthe rivers [m]",
                toolbar_location=None)
 fig_z.line("x", "z", source=steady, line_width=1, line_dash="dashed",
@@ -211,7 +222,7 @@ fig_z.y_range = Range1d(-0.5, 10.0)      # replaced on every redraw
 fig_z.legend.location = "top_left"
 fig_z.legend.background_fill_alpha = 0.6
 
-fig_u = figure(height=190, width=680, title="",
+fig_u = figure(height=240, width=880, title="",
                x_axis_label="Distance across the hillslope [m]",
                y_axis_label="Depth below\nthe surface  ζ [m]",
                x_range=fig_z.x_range, toolbar_location=None)
@@ -244,6 +255,8 @@ pn.Column(
         "give the same **k_hs** and the same hillslope \u2014 but not the same "
         "motion underneath it."),
     pn.Row(run, reset_button(do_reset, name="Flatten")),
-    k_u, dz_u, E, notice, fig_z, fig_u,
+    pn.Row(k_u, dz_u, sizing_mode="stretch_width", max_width=DESIGN_WIDTH),
+    pn.Row(E, pn.Spacer(), sizing_mode="stretch_width", max_width=DESIGN_WIDTH),
+    notice, fig_z, fig_u,
     sizing_mode="stretch_width", max_width=DESIGN_WIDTH,
 ).servable(title="Hillslope creep and diffusion")
