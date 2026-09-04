@@ -65,7 +65,9 @@ hill.equilibrate()                    # impose the steady form directly
 hill.incision_rate = -0.05e-3         # rivers aggrade instead
 hill.run(6.0e4)
 hill.exposed_length                   # m of hillslope not yet buried
-hill.surface()                        # visible ground: max(hillslope, fill)
+
+hill.incision_rate = 0.05e-3          # rivers cut back down
+hill.run(1.0e4)                       # the fill is left as a terrace
 hill.surface_velocity()               # m/yr at each node, signed
 hill.velocity_field(zeta)             # the field the diffusivity summarises
 ```

@@ -38,11 +38,12 @@ geomorphically interesting (design 05).
 
 ### Added later the same day
 
-- **Aggradation.** A negative incision rate fills the valley: the alluvial
-  surface is a level set, ground beneath it stops moving, and the exposed
-  hillslope genuinely shortens. `Hillslope.surface()` is the visible ground,
-  `max(z, fill)`; the hillslope beneath is remembered, so re-incision exhumes
-  it rather than leaving an invented terrace.
+- **Aggradation, and fill terraces.** A negative incision rate fills the
+  valley: the alluvial surface is a level set, ground below it is raised to it
+  and held by the river, and the exposed hillslope genuinely shortens.
+  Deposition is *permanent*, so when base level falls the fill stands above the
+  new river level as a **fill terrace**, which then degrades diffusively like
+  any other topography.
 - `Hillslope.equilibrate()`, and a **Jump to equilibrium** button in the demo:
   impose the steady form instead of waiting out the 10⁵-year relaxation. Raises
   for a non-positive rate, where no steady form exists.
