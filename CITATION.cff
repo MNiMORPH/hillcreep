@@ -1,0 +1,75 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "hillcreep: hillslope diffusivity built from a creep velocity profile"
+abstract: >-
+  Evolves a soil-mantled hillslope between two rivers, with the transport
+  coefficient assembled rather than assumed. Downslope soil velocity decays
+  exponentially below the land-air interface; integrating that profile over the
+  mobile layer gives the depth-integrated flux and, with it, a hillslope
+  diffusivity D = K H*, the product of the surface creep velocity at unit slope
+  and the e-folding depth of the motion. D is reported as a consequence of two
+  measurable quantities rather than set as a parameter, and the velocity field
+  it summarises is drawn beneath the hillslope. Built for teaching, and
+  delivered as an interactive browser demo.
+type: software
+authors:
+  - family-names: Wickert
+    given-names: Andrew D.
+    orcid: "https://orcid.org/0000-0002-9545-3365"
+license: GPL-3.0-or-later
+repository-code: "https://github.com/MNiMORPH/hillcreep"
+keywords:
+  - hillslope
+  - soil creep
+  - sediment transport
+  - geomorphology
+  - landscape evolution
+  - numerical modeling
+  - teaching
+references:
+  - type: article
+    authors:
+      - family-names: Johnstone
+        given-names: Samuel A.
+      - family-names: Hilley
+        given-names: George E.
+    title: "Lithologic control on the form of soil-mantled hillslopes"
+    journal: Geology
+    volume: 43
+    issue: 1
+    start: 83
+    end: 86
+    year: 2015
+    doi: 10.1130/G36052.1
+  - type: article
+    authors:
+      - family-names: Deshpande
+        given-names: Nakul S.
+      - family-names: Furbish
+        given-names: David J.
+      - family-names: Arratia
+        given-names: Paulo E.
+      - family-names: Jerolmack
+        given-names: Douglas J.
+    title: "The perpetual fragility of creeping hillslopes"
+    journal: Nature Communications
+    volume: 12
+    start: 3909
+    year: 2021
+    doi: 10.1038/s41467-021-23979-z
+  - type: article
+    authors:
+      - family-names: Heimsath
+        given-names: Arjun M.
+      - family-names: Furbish
+        given-names: David Jon
+      - family-names: Dietrich
+        given-names: William E.
+    title: "The illusion of diffusion: Field evidence for depth-dependent sediment transport"
+    journal: Geology
+    volume: 33
+    issue: 12
+    start: 949
+    end: 952
+    year: 2005
+    doi: 10.1130/G21868.1
