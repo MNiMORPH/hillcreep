@@ -237,7 +237,7 @@ def do_reset():
 
 
 hill0 = sim["hill"]
-profile = ColumnDataSource(data={"x": hill0.x, "z": hill0.surface()})
+profile = ColumnDataSource(data={"x": hill0.x, "z": hill0.z})
 # The valley fill: everything below the rivers, which is where the alluvium is.
 # Drawn under the profile, so a buried toe reads as a hillslope running into
 # sediment rather than as a hillslope that has mysteriously gone flat.
