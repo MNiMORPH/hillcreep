@@ -38,6 +38,8 @@ test = ["pytest"]
 # The interactive demo only.  The model itself needs numpy alone, which
 # Pyodide bundles -- to be confirmed with `artesian check numpy`.
 demo = ["panel>=1.4", "bokeh"]
+# Static figures only (examples/figure_two_panel.py); not needed to run the model.
+figures = ["matplotlib"]
 
 # src-layout: the single ``hillcreep`` package lives under src/.
 [tool.setuptools.packages.find]
