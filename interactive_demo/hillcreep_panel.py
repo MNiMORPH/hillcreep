@@ -235,14 +235,13 @@ _redraw()
 pn.Column(
     pn.pane.Markdown(
         "### Hillslope diffusivity, taken apart\n"
-        "**k**~hs~ is the number everyone quotes and nobody measures. Here it "
+        "**k_hs** is the number everyone quotes and nobody measures. Here it "
         "is not a setting: you choose how fast soil creeps at the surface "
-        "(**k**~u~) and how quickly that motion dies away downward "
-        "(**\u0394z**~u~), and **k**~hs~ **= k**~u~ **\u0394z**~u~ is reported "
-        "back.\n\n"
+        "(**k_u**) and how quickly that motion dies away downward "
+        "(**\u0394z_u**), and **k_hs = k_u \u0394z_u** is reported back.\n\n"
         "Press **\u25b6** and drag the sliders while it runs. Watch the lower "
-        "panel: **k**~u~ and **\u0394z**~u~ can be traded against each other to "
-        "give the same **k**~hs~ and the same hillslope \u2014 but not the same "
+        "panel: **k_u** and **\u0394z_u** can be traded against each other to "
+        "give the same **k_hs** and the same hillslope \u2014 but not the same "
         "motion underneath it."),
     pn.Row(run, reset_button(do_reset, name="Flatten")),
     k_u, dz_u, E, notice, fig_z, fig_u,
