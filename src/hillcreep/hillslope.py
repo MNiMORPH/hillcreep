@@ -239,7 +239,24 @@ class Hillslope(object):
         self.z[-1] = self.right.bed
         fill = self.fill_level()
         np.maximum(self.z, fill, out=self.z)
-        self.active = self.z > fill
+
+        # Only an *aggrading* river holds its floodplain flat. It is doing that
+        # by delivering sediment and regrading, so while it aggrades the valley
+        # floor is its surface and does not creep.
+        #
+        # A river that has stopped, or that is cutting down, has abandoned that
+        # surface. Then the whole domain diffuses, and the step where the fill
+        # abuts the hillslope degrades into the sigmoid of a relaxing scarp
+        # instead of being pinned as a flat tread meeting the hill at a kink.
+        # Holding it regardless of what the river was doing was wrong, and gave
+        # a parabola pinned at the floodplain edges for a static base level.
+        mid = self.x.size // 2
+        held = np.zeros(self.x.size, dtype=bool)
+        if self.left.incision_rate < 0.0:
+            held[:mid] = self.z[:mid] <= fill[:mid]
+        if self.right.incision_rate < 0.0:
+            held[mid:] = self.z[mid:] <= fill[mid:]
+        self.active = ~held
         self.active[0] = self.active[-1] = False
 
     def exposed_span(self):

@@ -30,6 +30,19 @@ def _steady_hill(**kw):
     return h
 
 
+def _aggrade_to(h, bed):
+    """Raise both rivers to ``bed`` as an aggrading river would.
+
+    The rate matters, not just the elevation: only an aggrading river holds its
+    floodplain flat, so a bed raised while the rate is still positive describes
+    a river that is cutting down through ground it is somehow also above.
+    """
+    h.incision_rate = -abs(h.incision_rate) or -0.05e-3
+    h.left.bed = h.right.bed = bed
+    h.apply_boundaries()
+    return h
+
+
 def test_aggrading_rivers_bury_the_toes_and_shorten_the_hillslope():
     """The coupling, not a cosmetic fill: burying a toe makes the hill shorter."""
     h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
@@ -37,8 +50,7 @@ def test_aggrading_rivers_bury_the_toes_and_shorten_the_hillslope():
 
     lengths = []
     for bed in (0.5, 1.0, 2.0, 4.0):
-        h.left.bed = h.right.bed = bed
-        h.apply_boundaries()
+        _aggrade_to(h, bed)
         lengths.append(h.exposed_length)
 
     assert lengths == sorted(lengths, reverse=True)     # strictly shortening
@@ -48,23 +60,21 @@ def test_aggrading_rivers_bury_the_toes_and_shorten_the_hillslope():
 
 
 def test_buried_nodes_sit_at_the_fill_elevation_and_do_not_evolve():
-    h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
-    h.left.bed = h.right.bed = 2.0
-    h.apply_boundaries()
+    h = _aggrade_to(_steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3), 2.0)
 
     buried = ~h.active
     assert buried.sum() > 2                             # more than the two ends
     assert np.allclose(h.z[buried], 2.0)        # alluvium at the fill
 
-    # Written first as "the buried set grows", which failed: it shrank from 18
-    # nodes to 2. That is the model being right. With the fill held, the
-    # exposed hill decays *onto* it, so drowned nodes are lifted to the fill
-    # level and stop being below it. The invariants that actually hold are the
-    # two below.
-    h.incision_rate = 0.0
+    # Kept aggrading: only an aggrading river holds its floodplain, and this
+    # test is about what a held node does. (Written first with the rate set to
+    # zero, which now releases the floodplain to diffuse -- correctly, but it
+    # is a different claim.)
     h.run(2.0e4)
-    assert np.allclose(h.z[~h.active], 2.0)  # alluvium over buried nodes
-    assert not (h.z[h.active] < 2.0).any()   # nothing exposed below it
+    # Against the *current* fill, not the 2.0 m it started at: the river is
+    # still aggrading, so the level it holds keeps rising during the run.
+    assert np.allclose(h.z[~h.active], h.left.bed)
+    assert not (h.z[h.active] < h.left.bed).any()
 
 
 def test_re_incision_leaves_a_fill_terrace_that_then_diffuses():
@@ -78,12 +88,12 @@ def test_re_incision_leaves_a_fill_terrace_that_then_diffuses():
     h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
     original_toe = h.z[5]
 
-    h.left.bed = h.right.bed = 3.0
-    h.apply_boundaries()
+    _aggrade_to(h, 3.0)
     assert not h.active[5]
     assert np.isclose(h.z[5], 3.0)                   # sediment deposited on it
     assert h.z[5] > original_toe                     # the toe is buried, not kept
 
+    h.incision_rate = 0.05e-3                        # rivers cut back down
     h.left.bed = h.right.bed = 1.0
     h.apply_boundaries()
     assert h.active[5]
@@ -92,15 +102,13 @@ def test_re_incision_leaves_a_fill_terrace_that_then_diffuses():
 
     # A terrace is topography, so it degrades like any other.
     before = h.z[5]
-    h.incision_rate = 0.0
     h.run(3.0e4)
     assert h.z[5] < before
 
 
 def test_a_fully_buried_hillslope_is_flat_and_has_no_exposed_span():
     h = _steady_hill(k_u=0.02, dz_u=0.5, incision_rate=0.05e-3)
-    h.left.bed = h.right.bed = h.z.max() + 1.0
-    h.apply_boundaries()
+    _aggrade_to(h, h.z.max() + 1.0)
 
     assert h.exposed_span() is None
     assert h.exposed_length == 0.0

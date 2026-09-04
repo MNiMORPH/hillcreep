@@ -94,10 +94,37 @@ recorded. The *level* drives deposition, but what is deposited is kept, so the
 surface carries a memory of the fill. Mass is still not conserved within the
 hillslope, and should not be: the river delivers material from outside it.
 
-Only `z > fill` is active. A node exactly at the alluvial surface is valley
-floor, graded by the river, and does not creep -- which also means a flat
-hillslope starting level with its rivers does nothing until they cut down.
-That is correct: it has no relief to drive anything.
+### Only an *aggrading* river holds its floodplain
+
+The hold was first applied whenever ground sat at the alluvial level, whatever
+the river was doing. Andy caught what that gives: with the rate at zero, the
+floodplain edges stay pinned flat and the hillslope meets them at a kink --
+"forces a parabola at the floodplain edges" -- when the whole domain should
+diffuse and the fill edge should relax into a **sigmoid**.
+
+He is right, and the reason is physical. A river holds its valley floor flat
+*because it is actively regrading it*, which is what aggrading means. A river
+that has stopped, or that is cutting down, has abandoned that surface; it is
+then ordinary topography and degrades like a scarp.
+
+So the hold is conditioned on the rate, not on the elevation:
+
+```
+held = (incision_rate < 0) and (z <= fill)
+```
+
+Measured, 72 kyr of aggradation then base level held at zero for 60 kyr, as
+elevation above the river across the first 12 m of floodplain:
+
+```
+held always:  0      0      0      0      0      0     ...   flat, pinned
+released:     0  0.0006 0.0011 0.0017 0.0022 0.0028   ...   a relaxing scarp
+```
+
+This also removes an oddity the earlier rule carried: a flat hillslope starting
+level with its rivers was classified as valley floor and could not begin to
+grow until they had cut down. Now it is active from the first step, and simply
+does nothing until there is relief to drive it.
 
 ### One ordering trap, paid for
 
