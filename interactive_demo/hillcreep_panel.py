@@ -193,6 +193,26 @@ def _redraw():
     valley.data = {"x": [0.0, hill.length], "y1": [-0.06 * top] * 2,
                    "y2": [0.0, 0.0]}
 
+    # Direction from the sign, length from the magnitude, relative to the
+    # fastest the slider offers so the two are comparable across settings.
+    rate = hill.incision_rate
+    if rate == 0.0:
+        river_arrows.data = {"x": [], "y0": [], "y1": [], "hy": [], "angle": []}
+    else:
+        frac = min(1.0, abs(rate) / (E_MAX * 1e-3))
+        span = (0.10 + 0.20 * frac) * top
+        down = rate > 0.0                      # positive rate = incising
+        tail = 0.5 * span if down else -0.5 * span
+        head = -0.5 * span if down else 0.5 * span
+        river_arrows.data = {
+            "x": [0.0, hill.length],
+            "y0": [tail, tail],
+            "y1": [head, head],
+            "hy": [head, head],
+            # bokeh's triangle points up at angle 0; pi turns it over.
+            "angle": [np.pi if down else 0.0] * 2,
+        }
+
     fig_z.title.text = ("t = %.0f kyr        k_hs = k_u \u0394z_u = %.4g m\u00b2/yr"
                         % (hill.t / 1000.0, hill.k_hs))
     # Across the exposed span *inclusive of its bounding nodes*: the toe is a
@@ -243,6 +263,12 @@ profile = ColumnDataSource(data={"x": hill0.x, "z": hill0.z})
 # sediment rather than as a hillslope that has mysteriously gone flat.
 valley = ColumnDataSource(data={"x": [0.0, LENGTH], "y1": [-1.0, -1.0],
                                 "y2": [0.0, 0.0]})
+# The rivers are the thing driving all of this, and the one thing on the figure
+# that never appears to move: the y-axis is elevation *above the rivers*, so
+# they sit at zero however fast they are cutting. Arrows say which way they are
+# going, and their length says how fast.
+river_arrows = ColumnDataSource(data={"x": [], "y0": [], "y1": [],
+                                      "hy": [], "angle": []})
 steady = ColumnDataSource(data={"x": hill0.x, "z": hill0.steady_profile()})
 velocity = ColumnDataSource(data={"u": [hill0.velocity_field(zeta) * 1e3]})
 
@@ -255,11 +281,18 @@ fig_z = figure(height=320, width=880, title="",
                toolbar_location=None)
 fig_z.varea(x="x", y1="y1", y2="y2", source=valley,
             fill_color="#e0d3b8", fill_alpha=0.85, level="underlay")
+fig_z.segment(x0="x", y0="y0", x1="x", y1="y1", source=river_arrows,
+              color="#2b6cb0", line_width=4)
+fig_z.scatter(x="x", y="hy", angle="angle", source=river_arrows,
+              marker="triangle", size=16, color="#2b6cb0",
+              legend_label="rivers")
 fig_z.line("x", "z", source=steady, line_width=1, line_dash="dashed",
            color="gray", legend_label="steady form")
 fig_z.line("x", "z", source=profile, line_width=3, color="black",
            legend_label="hillslope")
-fig_z.x_range = Range1d(0.0, LENGTH)
+# A little margin either side: the rivers sit exactly at x = 0 and x = L, and
+# an arrow drawn there is cut in half by the frame.
+fig_z.x_range = Range1d(-0.04 * LENGTH, 1.04 * LENGTH)
 fig_z.y_range = Range1d(-0.5, 10.0)      # replaced on every redraw
 fig_z.legend.location = "top_left"
 fig_z.legend.background_fill_alpha = 0.6
