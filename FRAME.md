@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `00d1f91`.
+claim below against git and disk before trusting it. Current to `284c815`.
 
 ## (a) Origin -- why this model exists
 
@@ -56,15 +56,22 @@ notes' own `k_hs`. Crosswalk in `README.md`.
    (it is about the notes, not the model) and lives with the course material;
    the errata for the hillslopes chapter was handed to Andy as a file and
    deliberately not filed here, since it is course material.
-6. Not yet done: no git remote, nothing pushed, and the demo is not embedded in
-   any course page.
+6. Not yet done: **no tagged release.** The provenance recorded on the exercise
+   page is therefore a commit, not a version, and `pip install hillcreep` does
+   not give a reader this code. Both demos *are* live, on one page at
+   <https://geomorphonline.github.io/exercises/hillslope-creep/>.
 
 ## (c) Key current data and objects
 
-Branch `master`, HEAD `b78e87b`, **everything unpushed** (there is no remote).
-`hillcreep` is `pip install -e`-installed into `~/.local` with
-`--break-system-packages`, matching how `artesian` and `corestone` are installed
-on this machine.
+Branch `master`, published at <https://github.com/MNiMORPH/hillcreep> on
+2026-09-04 (public, no release yet). `hillcreep` is `pip install -e`-installed
+into `~/.local` with `--break-system-packages`, matching how `artesian` and
+`corestone` are installed on this machine.
+
+**Version bumps are not optional.** The compiled demos install this package by
+wheel filename, which is built from the version, so `src/hillcreep/_version.py`
+must move on *every* rebuild into a site — see the comment on the constant, and
+`exercises/apps/README.md` in GeomorphOnline.github.io. It has failed twice.
 
 - `src/hillcreep/hillslope.py` -- **the model**. `Hillslope` and `River`.
   `Hillslope.k_hs` is a read-only property returning `k_u * dz_u`.
@@ -144,8 +151,9 @@ on this machine.
 
 ## (f) Guardrails
 
-- Nothing has been pushed, tagged, or released, and there is no remote. Every
-  one of those needs explicit authorisation in the message that asks for it.
+- The repository is public, but **nothing has been tagged or released**, and
+  pushing, tagging, releasing and closing issues each need explicit
+  authorisation in the message that asks for it.
 - `k_hs` must never become assignable.
 - Every number in prose is pasted probe output. If a number cannot be traced to
   a probe or a cited paper, it does not go in.
