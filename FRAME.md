@@ -2,7 +2,7 @@
 
 The read-first frame for this repo, per `~/.claude/COMPACTION_PLAYBOOK.md`.
 After a compaction, read this **before** acting, and verify every structural
-claim below against git and disk before trusting it. Current to `284c815`.
+claim below against git and disk before trusting it. Current to `dee35e0`.
 
 ## (a) Origin -- why this model exists
 
@@ -46,6 +46,13 @@ notes' own `k_hs`. Crosswalk in `README.md`.
    last one and Andy confirmed it (2026-09-04).
 3. Mass wasting, eventually (`design/06`). Two routes sketched; neither
    scheduled. This is what the steep corner of the slider space is waiting for.
+
+   **A sibling model now covers the stability half**: `infiniteslope`
+   (<https://github.com/GeomorphOnline/infiniteslope>, live at
+   `/exercises/hillslope-stability/`) solves for an emergent failure depth.
+   It does *not* close this gap — that is a transport law which misbehaves near
+   a critical slope, not a stability calculation — so build the coupling, not
+   the thing that already exists.
 4. Bedrock and weathering remain *available* but decided against for now
    (`design/05`). `ρ_m/ρ_r` goes in with the first line of bedrock, not
    before -- a constant fixed at 1.0 that participates in nothing would read as

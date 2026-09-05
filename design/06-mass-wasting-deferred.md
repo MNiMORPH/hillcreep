@@ -41,6 +41,28 @@ Two routes, not mutually exclusive:
 The second is the better fit for this model's purpose, but that is a judgement
 and not a decision. Neither is scheduled.
 
+## Since written: the topic has its own model
+
+`infiniteslope` (<https://github.com/GeomorphOnline/infiniteslope>) was built
+on 2026-09-05 and is live at
+<https://geomorphonline.github.io/exercises/hillslope-stability/>. It solves
+infinite-slope stability with an **emergent failure depth** — you set slope,
+cohesion, friction angle, water table and density, and the depth of the failure
+plane is solved for as the shallowest plane reaching a factor of safety of one.
+Same pedagogical shape as this model: the quantity everyone else prescribes is
+the one you are not allowed to set.
+
+**It does not close the gap described above**, and the distinction matters.
+`infiniteslope` answers *whether and where a slope fails*. This model's gap is
+a **transport law that misbehaves near a critical slope** — push the sliders
+into the steep corner and `hillcreep` will still diffuse a 45° hillslope
+linearly, with nothing to say it should have failed instead. The two routes
+sketched above are still unbuilt here.
+
+What has changed is that a student meeting that steep corner now has somewhere
+to go, and that a future session should build the coupling rather than the
+stability calculation, which exists.
+
 ## Until then
 
 The steep corner of the slider space is reachable and gives a hillslope that
